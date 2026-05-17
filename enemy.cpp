@@ -1,6 +1,7 @@
 #include "enemy.h"
 #include "bullet.h"
 #include "player.h"
+#include "item.h"
 #include <math.h>
 #include <allegro5/allegro_primitives.h>
 
@@ -121,7 +122,10 @@ void enemy_die(int idx) {
     player.score += 100;
     player.combo++;
 
-    // aqui se conecta el spawn de monedas DAL
+    // spawnear 3 monedas DAL al morir
+    spawn_dal(enemy_pool[idx].x, enemy_pool[idx].y);
+    spawn_dal(enemy_pool[idx].x - 15, enemy_pool[idx].y);
+    spawn_dal(enemy_pool[idx].x + 15, enemy_pool[idx].y);
 }
 
 // ================================
