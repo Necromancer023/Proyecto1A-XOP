@@ -12,6 +12,7 @@
 #include "enemy.h"
 #include "collision.h"
 #include "stats.h"
+#include "item.h"
 
 // ================================
 // VARIABLES GLOBALES
@@ -65,6 +66,7 @@ void draw() {
     case STATE_PLAYING:
         draw_bullets();
         draw_enemies();
+        draw_items();
         draw_player();
         draw_hud();
         break;
@@ -107,6 +109,7 @@ void update() {
     update_player();
     update_enemies();
     update_bullets();
+    update_items();
     check_player_hit();
     check_enemy_hit();
 
@@ -143,6 +146,7 @@ int main() {
     // --- inicializar sistemas ---
     init_bullet_pool();
     init_enemy_pool();
+    init_item_pool();
     init_player();
 
     // --- spawn de prueba para verificar que todo funciona ---
