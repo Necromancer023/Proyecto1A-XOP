@@ -1,29 +1,4 @@
-Siguen enemy.h y enemy.cpp.Este es el más interesante porque aquí va la Function Pointer Table de patrones de disparo.
-
-enemy.h — créalo y ponle esto :
-cpp#ifndef ENEMY_H
-#define ENEMY_H
-
-#include "game.h"
-
-// ================================
-// VARIABLES GLOBALES
-// ================================
-extern Enemy enemy_pool[MAX_ENEMIES];
-
-// ================================
-// FUNCIONES
-// ================================
-void init_enemy_pool();
-void spawn_enemy(float x, float y, float angle, float speed, int hp, int type);
-void update_enemies();
-void draw_enemies();
-void enemy_die(int idx);
-
-#endif
-
-enemy.cpp — créalo y ponle esto :
-cpp#include "enemy.h"
+#include "enemy.h"
 #include "bullet.h"
 #include "player.h"
 #include <math.h>
@@ -36,13 +11,15 @@ Enemy enemy_pool[MAX_ENEMIES];
 
 // ================================
 // TYPEDEF PARA LA TABLA DE PATRONES
+// un puntero a funcion que recibe
+// el indice del enemigo en el pool
 // ================================
-// un puntero a funcion que recibe el indice del enemigo
 typedef void (*FirePattern)(int idx);
 
 // ================================
 // PATRONES DE DISPARO
-// (una funcion por cada tipo de enemigo)
+// cada funcion define el comportamiento
+// de disparo de un tipo de enemigo
 // ================================
 
 // tipo 0 — dispara directo al jugador
@@ -54,7 +31,7 @@ void pattern_aimed(int idx) {
     );
 }
 
-// tipo 1 — circulo de 12 balas
+// tipo 1 — circulo de 12 balas en todas direcciones
 void pattern_circle(int idx) {
     fire_circle(enemy_pool[idx].x, enemy_pool[idx].y, 12, 2.5f);
 }
@@ -68,13 +45,15 @@ void pattern_spread(int idx) {
     );
 }
 
-// tipo 3 — doble circulo (jefe basico)
+// tipo 3 — doble circulo para jefes basicos
+// dispara dos anillos de balas a velocidades distintas
 void pattern_double_circle(int idx) {
     fire_circle(enemy_pool[idx].x, enemy_pool[idx].y, 8, 2.0f);
     fire_circle(enemy_pool[idx].x, enemy_pool[idx].y, 8, 3.5f);
 }
 
-// tipo 4 — espiral (usa frame_count del enemigo)
+// tipo 4 — espiral usando frame_count del enemigo
+// el angulo aumenta con el tiempo creando efecto de espiral
 void pattern_spiral(int idx) {
     float angle = (enemy_pool[idx].frame_count * 0.15f);
     fire_single(enemy_pool[idx].x, enemy_pool[idx].y, angle, 3.0f, 1);
@@ -82,7 +61,10 @@ void pattern_spiral(int idx) {
 
 // ================================
 // TABLA DE PATRONES
+// array de punteros a funcion
 // el tipo del enemigo es el indice
+// permite seleccionar patron en O(1)
+// sin usar switch
 // ================================
 FirePattern pattern_table[] = {
     pattern_aimed,          // tipo 0
@@ -92,11 +74,12 @@ FirePattern pattern_table[] = {
     pattern_spiral          // tipo 4
 };
 
-// cuantos tipos hay definidos
+// total de patrones definidos
 #define NUM_PATTERNS 5
 
 // ================================
 // INICIALIZAR POOL DE ENEMIGOS
+// marca todos como inactivos al inicio
 // ================================
 void init_enemy_pool() {
     for (int i = 0; i < MAX_ENEMIES; i++) {
@@ -106,6 +89,8 @@ void init_enemy_pool() {
 
 // ================================
 // SPAWNEAR UN ENEMIGO
+// busca el primer slot inactivo
+// y configura sus valores iniciales
 // ================================
 void spawn_enemy(float x, float y, float angle, float speed, int hp, int type) {
     for (int i = 0; i < MAX_ENEMIES; i++) {
@@ -128,40 +113,45 @@ void spawn_enemy(float x, float y, float angle, float speed, int hp, int type) {
 
 // ================================
 // CUANDO UN ENEMIGO MUERE
+// desactiva el enemigo, suma puntaje
+// y aumenta el combo del jugador
 // ================================
 void enemy_die(int idx) {
     enemy_pool[idx].active = 0;
     player.score += 100;
     player.combo++;
 
-    // aqui tu compañero puede conectar el spawn de monedas DAL
+    // aqui se conecta el spawn de monedas DAL
 }
 
 // ================================
 // ACTUALIZAR TODOS LOS ENEMIGOS
+// se llama una vez por frame
+// mueve, controla disparo y elimina
+// enemigos que salen de pantalla
 // ================================
 void update_enemies() {
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!enemy_pool[i].active) continue;
 
-        // mover enemigo
+        // mover con coordenadas polares
         enemy_pool[i].x += cos(enemy_pool[i].angle) * enemy_pool[i].speed;
         enemy_pool[i].y += sin(enemy_pool[i].angle) * enemy_pool[i].speed;
         enemy_pool[i].frame_count++;
 
-        // disparo segun timer
+        // contar frames y disparar cuando llega a cero
         enemy_pool[i].fire_timer--;
         if (enemy_pool[i].fire_timer <= 0) {
 
-            // llamar patron de la tabla en O(1) — sin switch
+            // seleccionar patron en O(1) con la tabla
             if (enemy_pool[i].type < NUM_PATTERNS) {
                 pattern_table[enemy_pool[i].type](i);
             }
 
-            enemy_pool[i].fire_timer = 60;  // resetear timer
+            enemy_pool[i].fire_timer = 60;  // resetear a 60 frames
         }
 
-        // eliminar si sale de pantalla
+        // eliminar si sale completamente de pantalla
         if (enemy_pool[i].y > SCREEN_H + 50 ||
             enemy_pool[i].y < -200 ||
             enemy_pool[i].x < -200 ||
@@ -173,6 +163,8 @@ void update_enemies() {
 
 // ================================
 // DIBUJAR TODOS LOS ENEMIGOS
+// dibuja triangulo rojo por cada
+// enemigo activo mas su barra de vida
 // ================================
 void draw_enemies() {
     for (int i = 0; i < MAX_ENEMIES; i++) {
@@ -181,7 +173,7 @@ void draw_enemies() {
         float x = enemy_pool[i].x;
         float y = enemy_pool[i].y;
 
-        // por ahora un rombo rojo hasta tener sprites
+        // triangulo rojo — reemplazar con sprite
         al_draw_filled_triangle(
             x, y - 15,
             x - 12, y + 10,
@@ -189,9 +181,12 @@ void draw_enemies() {
             al_map_rgb(255, 50, 50)
         );
 
-        // barra de vida encima del enemigo
+        // barra de vida proporcional al hp actual
         float hp_ratio = enemy_pool[i].hp / 5.0f;
-        al_draw_filled_rectangle(x - 15, y - 22, x - 15 + 30 * hp_ratio, y - 18,
-            al_map_rgb(255, 0, 0));
+        al_draw_filled_rectangle(
+            x - 15, y - 22,
+            x - 15 + 30 * hp_ratio, y - 18,
+            al_map_rgb(255, 0, 0)
+        );
     }
 }
