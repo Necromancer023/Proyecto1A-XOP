@@ -155,7 +155,6 @@ int main() {
     // --- game loop ---
     bool running = true;
     bool redraw = false;
-    ALLEGRO_KEYBOARD_STATE kb;
 
     while (running) {
         ALLEGRO_EVENT ev;
