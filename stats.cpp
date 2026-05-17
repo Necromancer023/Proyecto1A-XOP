@@ -1,10 +1,9 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "stats.h"
 #include "player.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define _CRT_SECURE_NO_WARNINGS
 
 // ================================
 // VARIABLE GLOBAL
@@ -19,6 +18,7 @@ TreeNode* score_tree = NULL;
 // ================================
 TreeNode* create_node(GameRecord record) {
     TreeNode* node = (TreeNode*)malloc(sizeof(TreeNode));
+    if (node == NULL) return NULL;  
     node->record = record;
     node->left = NULL;
     node->right = NULL;
