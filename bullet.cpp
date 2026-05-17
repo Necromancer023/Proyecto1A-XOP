@@ -1,4 +1,5 @@
 #include "bullet.h"
+#include "player.h"
 #include <math.h>
 #include <allegro5/allegro_primitives.h>
 
@@ -49,6 +50,12 @@ void update_bullets() {
         // eliminar si sale de pantalla
         if (bullet_pool[i].x < 0 || bullet_pool[i].x > SCREEN_W ||
             bullet_pool[i].y < 0 || bullet_pool[i].y > SCREEN_H) {
+            
+            // solo contar fallos de balas del jugador
+            if (bullet_pool[i].owner == 0) {
+                player.shots_missed++;
+            }
+            
             free_bullet(i);
         }
     }
