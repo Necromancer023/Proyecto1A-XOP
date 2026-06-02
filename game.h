@@ -67,9 +67,53 @@ typedef struct {
 // ================================
 typedef enum {
     STATE_MENU,
+    STATE_OPTIONS,
     STATE_PLAYING,
     STATE_PAUSED,
-    STATE_GAME_OVER
+    STATE_GAME_OVER,
+    STATE_VICTORY,
+    STATE_NAME_ENTRY,
+    STATE_STATS,
+    STATE_QUIT
 } GameState;
+
+// ================================
+// MODOS DE JUEGO
+// ================================
+typedef enum {
+    MODE_ORIGINAL = 0,  // velocidad normal
+    MODE_SLUDGE = 1,  // camara lenta (FPS reducido a la mitad)
+    MODE_MANIAC = 2,  // accion frenética (FPS y velocidad aumentados)
+    MODE_MASSACRE = 3   // doble cantidad de enemigos spawneados
+} GameMode;
+
+// ================================
+// DIFICULTAD GLOBAL
+// afecta velocidad de balas enemigas,
+// HP de enemigos y patrones del jefe
+// ================================
+extern int      difficulty;   // 0-7
+extern GameMode game_mode;
+
+// ================================
+// UTILIDAD
+// ================================
+static inline float diff_bullet_speed() {
+    // de 0.7x (Easiest) a 2.0x (Insane)
+    float factors[8] = { 0.7f, 0.85f, 1.0f, 1.15f, 1.3f, 1.5f, 1.75f, 2.0f };
+    return factors[difficulty];
+}
+
+static inline int diff_enemy_hp_bonus() {
+    // bonus de HP según dificultad
+    int bonus[8] = { -1, 0, 0, 1, 1, 2, 3, 5 };
+    return bonus[difficulty];
+}
+
+static inline int diff_fire_rate_bonus() {
+    // reduccion de frames entre disparos (más negativo = más rápido)
+    int bonus[8] = { 20, 10, 0, -5, -10, -15, -20, -25 };
+    return bonus[difficulty];
+}
 
 #endif
