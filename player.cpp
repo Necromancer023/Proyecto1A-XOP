@@ -1,5 +1,7 @@
 #include "player.h"
 #include "bullet.h"
+#include "weapons.h"
+#include "game.h"
 #include <math.h>
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_primitives.h>
@@ -9,12 +11,20 @@
 // ================================
 Player player;
 
+extern GameState game_state;
+extern int       difficulty;
+
 // teclas — se actualiza cada frame
 static ALLEGRO_KEYBOARD_STATE kb;
 
-// cooldown de disparo en frames
+// cooldowns
 static int shoot_timer = 0;
 static int weapon_timer = 0;
+static int sec_wep_timer = 0;  // timer para cambio de arma secundaria
+
+// invulnerabilidad tras recibir daño (en frames)
+static int invincible_timer = 0;
+#define INVINCIBLE_FRAMES 90
 
 // ================================
 // INICIALIZAR JUGADOR
@@ -31,6 +41,10 @@ void init_player() {
     player.shots_fired = 0;
     player.shots_hit = 0;
     player.shots_missed = 0;
+    invincible_timer = 0;
+    shoot_timer = 0;
+    weapon_timer = 0;
+    sec_wep_timer = 0;
 }
 
 // ================================
@@ -50,31 +64,50 @@ void update_player() {
         player.y += player.speed;
 
     // --- limites de pantalla ---
-    if (player.x < 10)           player.x = 10;
-    if (player.x > SCREEN_W - 10) player.x = SCREEN_W - 10;
-    if (player.y < 10)           player.y = 10;
-    if (player.y > SCREEN_H - 10) player.y = SCREEN_H - 10;
+    if (player.x < 10)             player.x = 10;
+    if (player.x > SCREEN_W - 10)  player.x = SCREEN_W - 10;
+    if (player.y < 10)             player.y = 10;
+    if (player.y > SCREEN_H - 10)  player.y = SCREEN_H - 10;
 
-    // --- disparo ---
+    // --- disparo primario (Z) ---
     if (shoot_timer > 0) shoot_timer--;
-
     if (al_key_down(&kb, ALLEGRO_KEY_Z) && shoot_timer == 0) {
         player_shoot();
-        shoot_timer = 6;    // dispara cada 6 frames (10 veces por segundo)
+        shoot_timer = 6;
     }
 
-    // --- cambio de arma ---
-    if (weapon_timer > 0) weapon_timer--;
+    // --- disparo secundario (X) ---
+    if (al_key_down(&kb, ALLEGRO_KEY_X)) {
+        fire_secondary();
+    }
 
+    // --- reflect shield / bomba (A) ---
+    // (X era el anterior; A es la nueva tecla para bomba/reflect)
+    // mantenemos X para arma secundaria y A para reflect
+    // pero si no hay arma secundaria, X tambien puede reflect
+
+    // --- cambio de arma primaria (C) ---
+    if (weapon_timer > 0) weapon_timer--;
     if (al_key_down(&kb, ALLEGRO_KEY_C) && weapon_timer == 0) {
         player_change_weapon();
-        weapon_timer = 15;  // evita cambiar demasiado rapido
+        weapon_timer = 15;
     }
 
-    // --- reflect shield ---
-    if (al_key_down(&kb, ALLEGRO_KEY_X)) {
+    // --- cambio de arma secundaria (V) ---
+    if (sec_wep_timer > 0) sec_wep_timer--;
+    if (al_key_down(&kb, ALLEGRO_KEY_V) && sec_wep_timer == 0) {
+        int next = ((int)secondary.type + 1) % 6;
+        pick_up_secondary((SecondaryWeapon)next);
+        sec_wep_timer = 20;
+    }
+
+    // --- reflect shield (A) ---
+    if (al_key_down(&kb, ALLEGRO_KEY_A)) {
         player_reflect_shield();
     }
+
+    // --- invulnerabilidad temporal ---
+    if (invincible_timer > 0) invincible_timer--;
 }
 
 // ================================
@@ -83,39 +116,33 @@ void update_player() {
 void player_shoot() {
     player.shots_fired++;
 
-    float up = -3.14159f / 2.0f;   // angulo hacia arriba
+    float up = -3.14159f / 2.0f;
 
     switch (player.weapon) {
     case 1:
-        // disparo simple al frente
         fire_single(player.x, player.y, up, 8.0f, 0);
         break;
     case 2:
-        // doble disparo
         fire_single(player.x - 10, player.y, up, 8.0f, 0);
         fire_single(player.x + 10, player.y, up, 8.0f, 0);
         break;
     case 3:
-        // triple disparo en abanico
         fire_single(player.x, player.y, up, 8.0f, 0);
         fire_single(player.x, player.y, up - 0.2f, 7.0f, 0);
         fire_single(player.x, player.y, up + 0.2f, 7.0f, 0);
         break;
     case 4:
-        // cuadruple
         fire_single(player.x - 15, player.y, up, 8.0f, 0);
         fire_single(player.x - 5, player.y, up, 8.0f, 0);
         fire_single(player.x + 5, player.y, up, 8.0f, 0);
         fire_single(player.x + 15, player.y, up, 8.0f, 0);
         break;
     case 5:
-        // disparo diagonal + frente
         fire_single(player.x, player.y, up, 9.0f, 0);
         fire_single(player.x, player.y, up - 0.4f, 7.0f, 0);
         fire_single(player.x, player.y, up + 0.4f, 7.0f, 0);
         break;
     case 6:
-        // maximo spread
         fire_single(player.x, player.y, up, 9.0f, 0);
         fire_single(player.x, player.y, up - 0.3f, 8.0f, 0);
         fire_single(player.x, player.y, up + 0.3f, 8.0f, 0);
@@ -132,41 +159,42 @@ void player_reflect_shield() {
     if (player.bombs <= 0) return;
     player.bombs--;
 
-    float radio = 80.0f;    // radio de efecto
+    float radio = 80.0f;
 
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (!bullet_pool[i].active) continue;
-        if (bullet_pool[i].owner != 1) continue;    // solo balas enemigas
+        if (bullet_pool[i].owner != 1) continue;
 
         float dx = bullet_pool[i].x - player.x;
         float dy = bullet_pool[i].y - player.y;
         float dist = sqrt(dx * dx + dy * dy);
 
         if (dist <= radio) {
-            // invertir direccion de la bala
             bullet_pool[i].angle += 3.14159f;
-            bullet_pool[i].owner = 0;  // ahora es del jugador
+            bullet_pool[i].owner = 0;
             player.shots_fired++;
         }
     }
 }
 
 // ================================
-// RECIBIR DAÑO
+// RECIBIR DAÑO — GAME OVER REAL
 // ================================
 void player_take_damage() {
+    if (invincible_timer > 0) return;  // frames de invulnerabilidad
+
     player.hp--;
-    player.combo = 0;   // perder combo al recibir daño
+    player.combo = 0;
+    invincible_timer = INVINCIBLE_FRAMES;  // 1.5 segundos de invulnerabilidad
 
     if (player.hp <= 0) {
-        // game over — por ahora solo reinicia posicion
-        // tu compañero conectara esto con el sistema de estados
-        init_player();
+        // GAME OVER real — cambia el estado del juego
+        game_state = STATE_GAME_OVER;
     }
 }
 
 // ================================
-// CAMBIAR ARMA
+// CAMBIAR ARMA PRIMARIA
 // ================================
 void player_change_weapon() {
     player.weapon++;
@@ -176,19 +204,22 @@ void player_change_weapon() {
 
 // ================================
 // DIBUJAR JUGADOR
+// Parpadea cuando esta invulnerable
 // ================================
 void draw_player() {
-    // por ahora un triangulo azul hasta tener sprites
+    // parpadear cuando es invulnerable
+    if (invincible_timer > 0 && (invincible_timer / 5) % 2 == 0)
+        return;
+
     float x = player.x;
     float y = player.y;
 
     al_draw_filled_triangle(
-        x, y - 15,    // punta arriba
-        x - 12, y + 10,    // esquina izquierda
-        x + 12, y + 10,    // esquina derecha
-        al_map_rgb(0, 200, 255)
-    );
+        x, y - 15,
+        x - 12, y + 10,
+        x + 12, y + 10,
+        al_map_rgb(0, 200, 255));
 
-    // hitbox de debug (circulo pequeño en el centro)
+    // hitbox de debug
     al_draw_circle(x, y, 4, al_map_rgb(255, 255, 0), 1.0f);
 }
