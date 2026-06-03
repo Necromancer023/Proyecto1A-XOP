@@ -124,5 +124,6 @@ static inline int diff_fire_rate_bonus() {
 extern ALLEGRO_SAMPLE* sfx_shoot;
 extern ALLEGRO_SAMPLE* sfx_explode;
 extern ALLEGRO_SAMPLE* sfx_pickup;
+extern ALLEGRO_BITMAP* spr_player;
 
 #endif
