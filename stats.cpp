@@ -10,7 +10,6 @@
 // ================================
 TreeNode* score_tree = NULL;
 
-// nombre del archivo de historial
 #define SCORES_FILE "scores.txt"
 
 // ================================
@@ -18,7 +17,7 @@ TreeNode* score_tree = NULL;
 // ================================
 TreeNode* create_node(GameRecord record) {
     TreeNode* node = (TreeNode*)malloc(sizeof(TreeNode));
-    if (node == NULL) return NULL;  
+    if (node == NULL) return NULL;
     node->record = record;
     node->left = NULL;
     node->right = NULL;
@@ -46,17 +45,15 @@ TreeNode* insert_node(TreeNode* root, GameRecord record) {
 
 // ================================
 // MOSTRAR TOP SCORES
-// recorre en orden descendente (derecha primero)
 // ================================
 void print_top_scores(TreeNode* root, int* count, int max) {
     if (root == NULL || *count >= max) return;
 
-    // derecha primero = mayor puntaje primero
     print_top_scores(root->right, count, max);
 
     if (*count < max) {
         (*count)++;
-        printf("%d. %s — %d pts | Disparos: %d | Aciertos: %d | Fallos: %d\n",
+        printf("%d. %s - %d pts | Disparos: %d | Aciertos: %d | Fallos: %d\n",
             *count,
             root->record.name,
             root->record.score,
@@ -92,6 +89,8 @@ void save_record(GameRecord record) {
         record.shots_hit,
         record.shots_missed);
 
+    // fflush para la escritura fisica inmediata
+    fflush(f);
     fclose(f);
 }
 
@@ -103,15 +102,22 @@ void load_scores() {
     score_tree = NULL;
 
     FILE* f = fopen(SCORES_FILE, "r");
-    if (f == NULL) return;  // archivo no existe todavia
+    if (f == NULL) return;
 
     GameRecord record;
-    while (fscanf(f, "%s %d %d %d %d",
+    while (fscanf(f, "%49s %d %d %d %d",
         record.name,
         &record.score,
         &record.shots_fired,
         &record.shots_hit,
         &record.shots_missed) == 5) {
+
+        // filtrar entradas "En progreso" del historico visible
+        if (strcmp(record.name, "En") == 0) {
+            char dummy[32];
+            fscanf(f, "%31s", dummy);
+            continue;
+        }
 
         score_tree = insert_node(score_tree, record);
     }
@@ -120,7 +126,7 @@ void load_scores() {
 }
 
 // ================================
-// GUARDAR PARTIDA ACTUAL DEL JUGADOR
+// MOSTRAR TOP 10
 // ================================
 void show_top_scores() {
     load_scores();
@@ -131,14 +137,18 @@ void show_top_scores() {
 }
 
 // ================================
-// CONSTRUIR RECORD DE LA PARTIDA ACTUAL
+// GUARDAR PARTIDA ACTUAL
+// shots_missed = disparos que salieron de pantalla sin impactar
 // ================================
 void save_current_game(const char* name) {
     GameRecord record;
     strncpy(record.name, name, 49);
+    record.name[49] = '\0';
     record.score = player.score;
     record.shots_fired = player.shots_fired;
     record.shots_hit = player.shots_hit;
+    // shots_missed = disparos lanzados menos los que acertaron
+    // incluye los que salieron de pantalla y los que el ReflectShield convirtio en balas propias sin acertar
     record.shots_missed = player.shots_missed;
 
     save_record(record);
