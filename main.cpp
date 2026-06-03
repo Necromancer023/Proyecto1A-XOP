@@ -32,6 +32,11 @@ int       difficulty = 2;             // Normal por defecto
 GameState game_state = STATE_MENU;
 
 // ================================
+// SPRITES
+// ================================
+ALLEGRO_BITMAP* spr_player = NULL;
+
+// ================================
 // SCROLL DE FONDO (estrellas)
 // ================================
 #define NUM_STARS 80
@@ -306,6 +311,7 @@ int main() {
     al_init();
     al_init_primitives_addon();
     al_init_image_addon();
+    spr_player = al_load_bitmap("assets/sprites/player.png");
     al_init_font_addon();
     al_init_ttf_addon();
     al_install_audio();
@@ -380,6 +386,7 @@ int main() {
 
     unload_audio();
     free_tree(score_tree);
+    if (spr_player) al_destroy_bitmap(spr_player);
     al_destroy_font(font);
     al_destroy_timer(timer);
     al_destroy_event_queue(queue);
