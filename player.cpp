@@ -270,11 +270,20 @@ void draw_player() {
     float x = player.x;
     float y = player.y;
 
-    al_draw_filled_triangle(
-        x, y - 15,
-        x - 12, y + 10,
-        x + 12, y + 10,
-        al_map_rgb(0, 200, 255));
+    if (spr_player) {
+        // dibujar sprite centrado en la posicion del jugador
+        int w = al_get_bitmap_width(spr_player);
+        int h = al_get_bitmap_height(spr_player);
+        al_draw_bitmap(spr_player, x - w / 2.0f, y - h / 2.0f, 0);
+    }
+    else {
+        // fallback al triangulo si no carga el sprite
+        al_draw_filled_triangle(
+            x, y - 15,
+            x - 12, y + 10,
+            x + 12, y + 10,
+            al_map_rgb(0, 200, 255));
+    }
 
   
     al_draw_circle(x, y, 4, al_map_rgb(255, 255, 0), 1.0f);
