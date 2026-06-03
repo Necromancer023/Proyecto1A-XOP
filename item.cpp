@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "item.h"
 #include "player.h"
+#include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_primitives.h>
 #include <math.h>
 
@@ -78,6 +79,11 @@ void update_items() {
         float pickup_r = (item_pool[i].type == 1) ? 28.0f : 20.0f;
 
         if (dist <= pickup_r) {
+
+            // sonido de pickup
+            if (sfx_pickup)
+                al_play_sample(sfx_pickup, 0.7f, 0.0f, 1.0f, ALLEGRO_PLAYMODE_ONCE, NULL);
+
             if (item_pool[i].type == 0) {
                 // DAL coin: suma puntos y combo
                 player.score += item_pool[i].value;
