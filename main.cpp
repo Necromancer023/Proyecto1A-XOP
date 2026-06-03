@@ -17,6 +17,7 @@
 #include "stage.h"
 #include "screens.h"
 #include "weapons.h"
+#include "game_flow.h"
 
 // ================================
 // VARIABLES GLOBALES
@@ -26,11 +27,49 @@ ALLEGRO_TIMER* timer = NULL;
 ALLEGRO_EVENT_QUEUE* queue = NULL;
 ALLEGRO_FONT* font = NULL;
 
-// Modo y dificultad — globales del juego
-GameMode game_mode = MODE_ORIGINAL;
-int      difficulty = 2;             // Normal por default
-
+GameMode  game_mode = MODE_ORIGINAL;
+int       difficulty = 2;             // Normal por defecto
 GameState game_state = STATE_MENU;
+
+// ================================
+// SCROLL DE FONDO (estrellas)
+// ================================
+#define NUM_STARS 80
+
+static struct {
+    float x, y, speed, brightness;
+} stars[NUM_STARS];
+
+static float bg_offset = 0.0f;
+
+static void init_stars() {
+    for (int i = 0; i < NUM_STARS; i++) {
+        stars[i].x = (float)(rand() % SCREEN_W);
+        stars[i].y = (float)(rand() % SCREEN_H);
+        stars[i].speed = 0.5f + (float)(rand() % 30) / 10.0f; // 0.5 a 3.5
+        stars[i].brightness = 100.0f + (float)(rand() % 155);       // 100-255
+    }
+}
+
+static void update_stars(float scroll_speed) {
+    for (int i = 0; i < NUM_STARS; i++) {
+        stars[i].y += stars[i].speed * scroll_speed;
+        if (stars[i].y > SCREEN_H + 2) {
+            stars[i].y = -2.0f;
+            stars[i].x = (float)(rand() % SCREEN_W);
+        }
+    }
+}
+
+static void draw_stars() {
+    for (int i = 0; i < NUM_STARS; i++) {
+        int b = (int)stars[i].brightness;
+        // estrellas mas rapidas son mas grandes y brillantes
+        float r = (stars[i].speed > 2.5f) ? 1.5f : 1.0f;
+        al_draw_filled_circle(stars[i].x, stars[i].y, r,
+            al_map_rgb(b, b, b));
+    }
+}
 
 // ================================
 // AUDIO
@@ -42,7 +81,6 @@ static ALLEGRO_SAMPLE_INSTANCE* music_inst = NULL;
 static ALLEGRO_SAMPLE* music_sample = NULL;
 
 static void load_audio() {
-    
     sfx_shoot = al_load_sample("assets/shoot.wav");
     sfx_explode = al_load_sample("assets/explode.wav");
     sfx_pickup = al_load_sample("assets/pickup.wav");
@@ -58,31 +96,31 @@ static void load_audio() {
 
 static void unload_audio() {
     if (music_inst) { al_stop_sample_instance(music_inst); al_destroy_sample_instance(music_inst); }
-    if (music_sample) al_destroy_sample(music_sample);
-    if (sfx_shoot)    al_destroy_sample(sfx_shoot);
-    if (sfx_explode)  al_destroy_sample(sfx_explode);
-    if (sfx_pickup)   al_destroy_sample(sfx_pickup);
+    if (music_sample)  al_destroy_sample(music_sample);
+    if (sfx_shoot)     al_destroy_sample(sfx_shoot);
+    if (sfx_explode)   al_destroy_sample(sfx_explode);
+    if (sfx_pickup)    al_destroy_sample(sfx_pickup);
 }
 
 // ================================
 // INICIAR UNA PARTIDA NUEVA
-// Resetea todos los sistemas
 // ================================
-static void start_new_game() {
+void start_new_game() {
     init_bullet_pool();
     init_enemy_pool();
     init_item_pool();
     init_player();
     init_stage_state();
-    init_secondary(WEAPON_BOTS);  // arma secundaria inicial
+    init_secondary(WEAPON_BOTS);
+    init_stars();
+    bg_offset = 0.0f;
 
-    // aplicar modo de juego al jugador
     switch (game_mode) {
     case MODE_SLUDGE:
-        al_set_timer_speed(timer, 2.0 / FPS);  // mitad de velocidad
+        al_set_timer_speed(timer, 2.0 / FPS);
         break;
     case MODE_MANIAC:
-        al_set_timer_speed(timer, 0.7 / FPS);  // mas rapido
+        al_set_timer_speed(timer, 0.7 / FPS);
         player.speed = PLAYER_SPEED * 1.4f;
         break;
     default:
@@ -97,7 +135,6 @@ static void start_new_game() {
 // DIBUJAR HUD EN JUEGO
 // ================================
 static void draw_hud() {
-    // --- columna izquierda ---
     al_draw_textf(font, al_map_rgb(255, 255, 255), 10, 10, 0,
         "HP: %d", player.hp);
     al_draw_textf(font, al_map_rgb(200, 200, 255), 10, 28, 0,
@@ -108,13 +145,10 @@ static void draw_hud() {
         "Combo: x%d", player.combo);
     al_draw_textf(font, al_map_rgb(150, 150, 255), 10, 82, 0,
         "Arma 1: %d", player.weapon);
-
-    // estadisticas de disparo (debajo)
     al_draw_textf(font, al_map_rgb(150, 150, 150), 10, 100, 0,
         "D:%d A:%d F:%d",
         player.shots_fired, player.shots_hit, player.shots_missed);
 
-    // modo de juego si no es Original
     if (game_mode != MODE_ORIGINAL) {
         const char* modes[] = { "", "SLUDGE", "MANIAC", "MASSACRE" };
         al_draw_text(font, al_map_rgb(255, 150, 50),
@@ -122,10 +156,7 @@ static void draw_hud() {
             ALLEGRO_ALIGN_CENTER, modes[game_mode]);
     }
 
-    // HUD del stage (nombre, oleada, barra de jefe)
     draw_stage_hud();
-
-    // HUD del arma secundaria
     draw_secondary();
 }
 
@@ -147,14 +178,16 @@ static void draw() {
 
     case STATE_PLAYING:
     case STATE_PAUSED:
+        // fondo con estrellas en scroll
+        draw_stars();
         draw_bullets();
         draw_enemies();
         draw_items();
         draw_secondary();
         draw_player();
         draw_hud();
+
         if (game_state == STATE_PAUSED) {
-            
             al_draw_filled_rectangle(0, 0, SCREEN_W, SCREEN_H,
                 al_map_rgba(0, 0, 0, 100));
             al_draw_text(font, al_map_rgb(255, 255, 100),
@@ -195,42 +228,48 @@ static void draw() {
 static void update() {
     if (game_state != STATE_PLAYING) return;
 
-    // --- multiplicador de modo Massacre
+    // scroll de fondo segun velocidad del nivel actual
+    float scroll = stages[stage_state.current_stage].bg_scroll_speed;
+    update_stars(scroll);
 
     update_player();
     update_enemies();
     update_bullets();
     update_items();
-    update_secondary();         // actualizar armas secundarias (bots, implosion)
-    update_stage();             // oleadas, jefes, transiciones de nivel
+    update_secondary();
+    update_stage();
     check_player_hit();
     check_enemy_hit();
 
-    // --- verificar game over ---
+    // verificar game over
     if (player.hp <= 0) {
         game_state = STATE_GAME_OVER;
     }
 
-    // --- verificar victoria (todos los niveles completados) ---
-
+    // verificar victoria
+    // guardar el score de inmediato.
+    if (game_state == STATE_VICTORY) {
+        save_current_game(
+            (name_entry_done && name_entry_buffer[0] != '\0')
+            ? name_entry_buffer
+            : "Jugador");
+    }
 }
 
 // ================================
 // MANEJAR EVENTOS DE TECLADO
 // ================================
 static void handle_key(ALLEGRO_EVENT* ev) {
-    // pantallas que manejan sus propios eventos
     switch (game_state) {
-    case STATE_MENU:       update_menu(ev);        return;
-    case STATE_OPTIONS:    update_options(ev);     return;
-    case STATE_GAME_OVER:  update_game_over(ev);   return;
-    case STATE_VICTORY:    update_victory(ev);     return;
-    case STATE_NAME_ENTRY: update_name_entry(ev);  return;
-    case STATE_STATS:      update_stats_screen(ev); return;
+    case STATE_MENU:        update_menu(ev);         return;
+    case STATE_OPTIONS:     update_options(ev);      return;
+    case STATE_GAME_OVER:   update_game_over(ev);    return;
+    case STATE_VICTORY:     update_victory(ev);      return;
+    case STATE_NAME_ENTRY:  update_name_entry(ev);   return;
+    case STATE_STATS:       update_stats_screen(ev); return;
     default: break;
     }
 
-    // eventos globales en juego
     if (ev->type != ALLEGRO_EVENT_KEY_DOWN) return;
 
     switch (ev->keyboard.keycode) {
@@ -243,11 +282,10 @@ static void handle_key(ALLEGRO_EVENT* ev) {
 
     case ALLEGRO_KEY_ESCAPE:
         if (game_state == STATE_PLAYING || game_state == STATE_PAUSED) {
-            // guardar partida actual antes de salir al menu
             if (player.score > 0) {
                 save_current_game("Abandonado");
             }
-            al_set_timer_speed(timer, 1.0 / FPS);  // resetear timer si estaba en modo especial
+            al_set_timer_speed(timer, 1.0 / FPS);
             game_state = STATE_MENU;
         }
         break;
@@ -258,7 +296,7 @@ static void handle_key(ALLEGRO_EVENT* ev) {
 // MAIN
 // ================================
 int main() {
-    // --- init allegro ---
+    // init allegro
     al_init();
     al_init_primitives_addon();
     al_init_image_addon();
@@ -267,8 +305,8 @@ int main() {
     al_install_audio();
     al_init_acodec_addon();
     al_install_keyboard();
+    al_install_mouse();         // mouse habilitado
 
-    // --- crear ventana, timer y cola ---
     display = al_create_display(SCREEN_W, SCREEN_H);
     timer = al_create_timer(1.0 / FPS);
     queue = al_create_event_queue();
@@ -277,25 +315,24 @@ int main() {
     al_set_window_title(display, "XOP — Bullet Hell");
     al_reserve_samples(8);
 
-    // --- registrar fuentes de eventos ---
     al_register_event_source(queue, al_get_display_event_source(display));
     al_register_event_source(queue, al_get_timer_event_source(timer));
     al_register_event_source(queue, al_get_keyboard_event_source());
+    al_register_event_source(queue, al_get_mouse_event_source());
 
-    // --- cargar audio ---
     load_audio();
 
-    // --- inicializar pools (para que esten listos desde el menu) ---
+    // inicializar sistemas
     init_bullet_pool();
     init_enemy_pool();
     init_item_pool();
     init_player();
     init_stage_state();
     init_secondary(WEAPON_BOTS);
+    init_stars();
 
     al_start_timer(timer);
 
-    // --- game loop ---
     bool running = true;
     bool redraw = false;
 
@@ -314,24 +351,12 @@ int main() {
             ev.type == ALLEGRO_EVENT_KEY_CHAR) {
             handle_key(&ev);
 
-            // NAME_ENTRY
             if (game_state == STATE_NAME_ENTRY &&
                 ev.type == ALLEGRO_EVENT_KEY_CHAR) {
                 update_name_entry(&ev);
             }
         }
 
-        // iniciar nueva partida cuando se pide desde las pantallas
-        if (game_state == STATE_PLAYING &&
-            stage_state.current_stage == 0 &&
-            stage_state.current_wave == 0 &&
-            count_active_enemies() == 0 &&
-            stage_state.wave_timer == 120 &&
-            player.score == 0) {
-            
-        }
-
-        // salir si se pidio desde el menu
         if (game_state == STATE_QUIT) {
             running = false;
         }
@@ -342,12 +367,11 @@ int main() {
         }
     }
 
-    // --- guardar estadisticas al cerrar ---
+    // guardar si habia partida activa
     if (player.score > 0 && name_entry_done == 0) {
         save_current_game("Jugador");
     }
 
-    // --- liberar recursos ---
     unload_audio();
     free_tree(score_tree);
     al_destroy_font(font);
