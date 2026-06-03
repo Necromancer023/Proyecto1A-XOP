@@ -81,15 +81,15 @@ void free_tree(TreeNode* root) {
 void save_record(GameRecord record) {
     FILE* f = fopen(SCORES_FILE, "a");
     if (f == NULL) return;
-
+    
+    char safe_name[50];
+    strncpy(safe_name, record.name, 49);
+    safe_name[49] = '\0';
+    for (int i = 0; safe_name[i]; i++)
+        if (safe_name[i] == ' ') safe_name[i] = '_';
     fprintf(f, "%s %d %d %d %d\n",
-        record.name,
-        record.score,
-        record.shots_fired,
-        record.shots_hit,
-        record.shots_missed);
-
-    // fflush para la escritura fisica inmediata
+        safe_name, record.score, record.shots_fired,
+        record.shots_hit, record.shots_missed);
     fflush(f);
     fclose(f);
 }
@@ -113,11 +113,12 @@ void load_scores() {
         &record.shots_missed) == 5) {
 
         // filtrar entradas "En progreso" del historico visible
-        if (strcmp(record.name, "En") == 0) {
-            char dummy[32];
-            fscanf(f, "%31s", dummy);
-            continue;
-        }
+        if (strcmp(record.name, "En_progreso") == 0) continue;
+        if (strcmp(record.name, "Abandonado") == 0) continue;
+        if (strcmp(record.name, "Jugador") == 0) continue;
+        // restaurar guiones bajos a espacios para mostrar en pantalla
+        for (int i = 0; record.name[i]; i++)
+            if (record.name[i] == '_') record.name[i] = ' ';
 
         score_tree = insert_node(score_tree, record);
     }
