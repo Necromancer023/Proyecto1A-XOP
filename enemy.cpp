@@ -321,6 +321,7 @@ void draw_enemies() {
             ALLEGRO_BITMAP* spr = NULL;
             if (stage_state.current_stage == 0) spr = spr_boss1;
             if (stage_state.current_stage == 1) spr = spr_boss2;
+            if (stage_state.current_stage == 2) spr = spr_boss3;
 
             if (spr) {
                 int w = al_get_bitmap_width(spr);
