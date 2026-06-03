@@ -5,6 +5,7 @@
 #include "game.h"
 #include <math.h>
 #include <stdlib.h>
+#include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_primitives.h>
 
 // ================================
@@ -168,6 +169,10 @@ void enemy_die(int idx) {
     enemy_pool[idx].active = 0;
     player.score += 100 * (1 + player.combo / 10);
     player.combo++;
+
+    // sonido de explosion
+    if (sfx_explode)
+        al_play_sample(sfx_explode, 0.8f, 0.0f, 1.0f, ALLEGRO_PLAYMODE_ONCE, NULL);
 
     // decidir que item dropear
     int roll = rand() % 100;
