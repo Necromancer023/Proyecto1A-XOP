@@ -115,7 +115,6 @@ void load_scores() {
         // filtrar entradas "En progreso" del historico visible
         if (strcmp(record.name, "En_progreso") == 0) continue;
         if (strcmp(record.name, "Abandonado") == 0) continue;
-        if (strcmp(record.name, "Jugador") == 0) continue;
         // restaurar guiones bajos a espacios para mostrar en pantalla
         for (int i = 0; record.name[i]; i++)
             if (record.name[i] == '_') record.name[i] = ' ';

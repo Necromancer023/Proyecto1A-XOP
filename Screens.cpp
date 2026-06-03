@@ -307,30 +307,24 @@ void draw_stats_screen() {
     // (stats.cpp ya tiene print_top_scores; aqui dibujamos en pantalla)
     // Re-implementamos la travesia aqui para obtener los datos en un array
 
-    // --- TRAVESIA IN-ORDER INVERSA DEL ARBOL ---
-    // pila manual de hasta 64 nodos para evitar recursion en este contexto
-    TreeNode* stack[64];
-    int stack_top = 0;
-    TreeNode* curr = score_tree;
-
-    while ((curr != NULL || stack_top > 0) && rec_count < 10) {
-        // ir al nodo mas a la derecha (mayor puntaje)
-        while (curr != NULL) {
-            stack[stack_top++] = curr;
-            curr = curr->right;
+// --- TRAVESIA RECURSIVA DESCENDENTE (mayor puntaje primero) ---
+    struct CollectHelper {
+        static void run(TreeNode* node, SR* arr, int* count, int max) {
+            if (node == NULL || *count >= max) return;
+            run(node->right, arr, count, max);
+            if (*count < max) {
+                strncpy(arr[*count].name, node->record.name, 49);
+                arr[*count].name[49] = '\0';
+                arr[*count].score = node->record.score;
+                arr[*count].fired = node->record.shots_fired;
+                arr[*count].hit = node->record.shots_hit;
+                arr[*count].missed = node->record.shots_missed;
+                (*count)++;
+            }
+            run(node->left, arr, count, max);
         }
-        curr = stack[--stack_top];
-
-        // guardar record
-        strncpy(records[rec_count].name, curr->record.name, 49);
-        records[rec_count].score = curr->record.score;
-        records[rec_count].fired = curr->record.shots_fired;
-        records[rec_count].hit = curr->record.shots_hit;
-        records[rec_count].missed = curr->record.shots_missed;
-        rec_count++;
-
-        curr = curr->left;
-    }
+    };
+    CollectHelper::run(score_tree, records, &rec_count, 10);
 
     // dibujar la tabla
     float y = 80.0f;
@@ -423,6 +417,8 @@ void update_name_entry(ALLEGRO_EVENT* ev) {
                 name_entry_len = 7;
             }
             name_entry_done = 1;
+            // guardar el score con el nombre ingresado antes de reiniciar
+            save_current_game(name_entry_buffer);
             // arrancar partida nueva con el nombre ingresado
             start_new_game();
 

@@ -268,10 +268,7 @@ static void update() {
     // verificar victoria
     // guardar el score de inmediato.
     if (game_state == STATE_VICTORY) {
-        save_current_game(
-            (name_entry_done && name_entry_buffer[0] != '\0')
-            ? name_entry_buffer
-            : "Jugador");
+        // el guardado ocurre en name_entry al confirmar nombre
     }
 }
 
