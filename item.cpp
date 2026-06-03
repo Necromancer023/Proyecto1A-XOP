@@ -43,6 +43,8 @@ void spawn_dal(float x, float y) {
     item_pool[i].active = 1;
     item_pool[i].type = 0;      // DAL coin
     item_pool[i].value = 50;     // valor base
+    item_pool[i].anim_frame = 0;
+    item_pool[i].anim_timer = 0;
 }
 
 // ================================
@@ -66,6 +68,15 @@ void spawn_bomb_slot(float x, float y) {
 void update_items() {
     for (int i = 0; i < MAX_ITEMS; i++) {
         if (!item_pool[i].active) continue;
+
+        // avanzar animacion cada 6 frames
+        if (item_pool[i].type == 0) {
+            item_pool[i].anim_timer++;
+            if (item_pool[i].anim_timer >= 6) {
+                item_pool[i].anim_timer = 0;
+                item_pool[i].anim_frame = (item_pool[i].anim_frame + 1) % 8;
+            }
+        }
 
         // caer hacia abajo 
         item_pool[i].y += (item_pool[i].type == 1) ? 1.2f : 2.0f;
@@ -119,9 +130,17 @@ void draw_items() {
         float y = item_pool[i].y;
 
         if (item_pool[i].type == 0) {
-            // DAL coin: circulo amarillo 
-            al_draw_filled_circle(x, y, 6, al_map_rgb(255, 220, 0));
-            al_draw_circle(x, y, 6, al_map_rgb(255, 255, 100), 1.0f);
+            ALLEGRO_BITMAP* spr = spr_coin[item_pool[i].anim_frame];
+            if (spr) {
+                int w = al_get_bitmap_width(spr);
+                int h = al_get_bitmap_height(spr);
+                al_draw_bitmap(spr, x - w / 2.0f, y - h / 2.0f, 0);
+            }
+            else {
+                // fallback geometrico
+                al_draw_filled_circle(x, y, 6, al_map_rgb(255, 220, 0));
+                al_draw_circle(x, y, 6, al_map_rgb(255, 255, 100), 1.0f);
+            }
         }
         else {
             // Reflect Shield Slot:  (mas visible)
