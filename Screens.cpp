@@ -154,22 +154,24 @@ void draw_options() {
     draw_title("Opciones", 40);
 
     // modo de juego
-    draw_option(options_labels[0], 130, options_sel == 0);
-    al_draw_text(font, al_map_rgb(100, 255, 200),
-        SCREEN_W / 2.0f + 30, 130, 0, mode_names[game_mode]);
+    float lx = 80.0f;   // columna de labels
+    float vx = 220.0f;  // columna de valores
 
-    // dificultad
-    draw_option(options_labels[1], 160, options_sel == 1);
-    al_draw_text(font, al_map_rgb(100, 255, 200),
-        SCREEN_W / 2.0f + 30, 160, 0, diff_names[difficulty]);
-
-    // velocidad de nave 
+    ALLEGRO_COLOR c0 = (options_sel == 0) ? al_map_rgb(255, 230, 50) : al_map_rgb(180, 180, 200);
+    ALLEGRO_COLOR c1 = (options_sel == 1) ? al_map_rgb(255, 230, 50) : al_map_rgb(180, 180, 200);
+    ALLEGRO_COLOR c2 = (options_sel == 2) ? al_map_rgb(255, 230, 50) : al_map_rgb(180, 180, 200);
+    if (options_sel == 0) al_draw_text(font, al_map_rgb(255, 230, 50), lx - 14, 130, 0, ">");
+    if (options_sel == 1) al_draw_text(font, al_map_rgb(255, 230, 50), lx - 14, 160, 0, ">");
+    if (options_sel == 2) al_draw_text(font, al_map_rgb(255, 230, 50), lx - 14, 190, 0, ">");
+    al_draw_text(font, c0, lx, 130, 0, "Modo:");
+    al_draw_text(font, c1, lx, 160, 0, "Dificultad:");
+    al_draw_text(font, c2, lx, 190, 0, "Vel. nave:");
+    al_draw_text(font, al_map_rgb(100, 255, 200), vx, 130, 0, mode_names[game_mode]);
+    al_draw_text(font, al_map_rgb(100, 255, 200), vx, 160, 0, diff_names[difficulty]);
     int speed_idx = (int)(player.speed / 2.0f) - 1;
     if (speed_idx < 0) speed_idx = 0;
     if (speed_idx > 2) speed_idx = 2;
-    draw_option(options_labels[2], 190, options_sel == 2);
-    al_draw_text(font, al_map_rgb(100, 255, 200),
-        SCREEN_W / 2.0f + 30, 190, 0, speed_names[speed_idx]);
+    al_draw_text(font, al_map_rgb(100, 255, 200), vx, 190, 0, speed_names[speed_idx]);
 
     // volver
     draw_option(options_labels[3], 240, options_sel == 3);
@@ -219,44 +221,33 @@ void update_options(ALLEGRO_EVENT* ev) {
 // ================================
 // GAME OVER
 // ================================
-static int game_over_timer = 0;
 
 void draw_game_over() {
     al_clear_to_color(al_map_rgb(5, 0, 0));
-
     al_draw_text(font, al_map_rgb(255, 30, 30),
         SCREEN_W / 2.0f, SCREEN_H / 2.0f - 60,
         ALLEGRO_ALIGN_CENTER, "GAME OVER");
-
     al_draw_textf(font, al_map_rgb(200, 200, 200),
         SCREEN_W / 2.0f, SCREEN_H / 2.0f - 20,
         ALLEGRO_ALIGN_CENTER, "Puntaje: %d", player.score);
-
     al_draw_textf(font, al_map_rgb(150, 150, 150),
         SCREEN_W / 2.0f, SCREEN_H / 2.0f + 5,
         ALLEGRO_ALIGN_CENTER, "Disparos: %d | Aciertos: %d | Fallos: %d",
         player.shots_fired, player.shots_hit, player.shots_missed);
-
-    if (game_over_timer > 90) {
-        al_draw_text(font, al_map_rgb(150, 150, 100),
-            SCREEN_W / 2.0f, SCREEN_H / 2.0f + 50,
-            ALLEGRO_ALIGN_CENTER, "Enter: ingresar nombre  |  Esc: menu");
-    }
+    al_draw_text(font, al_map_rgb(150, 150, 100),
+        SCREEN_W / 2.0f, SCREEN_H / 2.0f + 50,
+        ALLEGRO_ALIGN_CENTER, "Enter: jugar de nuevo  |  Esc: menu");
 }
 
 void update_game_over(ALLEGRO_EVENT* ev) {
-    game_over_timer++;
     if (ev->type != ALLEGRO_EVENT_KEY_DOWN) return;
-
-    if (game_over_timer < 60) return;  // evitar skip 
-
     if (ev->keyboard.keycode == ALLEGRO_KEY_ENTER) {
-        game_over_timer = 0;
-        game_state = STATE_NAME_ENTRY;
-        screens_init();
+        save_current_game(
+            (name_entry_done && name_entry_buffer[0] != '\0')
+            ? name_entry_buffer : "Jugador");
+        start_new_game();
     }
     if (ev->keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
-        game_over_timer = 0;
         game_state = STATE_MENU;
     }
 }
