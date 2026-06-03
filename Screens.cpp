@@ -242,10 +242,8 @@ void draw_game_over() {
 void update_game_over(ALLEGRO_EVENT* ev) {
     if (ev->type != ALLEGRO_EVENT_KEY_DOWN) return;
     if (ev->keyboard.keycode == ALLEGRO_KEY_ENTER) {
-        save_current_game(
-            (name_entry_done && name_entry_buffer[0] != '\0')
-            ? name_entry_buffer : "Jugador");
-        start_new_game();
+        screens_init();
+        game_state = STATE_NAME_ENTRY;
     }
     if (ev->keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
         game_state = STATE_MENU;
@@ -417,10 +415,10 @@ void update_name_entry(ALLEGRO_EVENT* ev) {
                 name_entry_len = 7;
             }
             name_entry_done = 1;
-            // guardar el score con el nombre ingresado antes de reiniciar
+            // guardar el score con el nombre ingresado
             save_current_game(name_entry_buffer);
-            // arrancar partida nueva con el nombre ingresado
-            start_new_game();
+            // volver al menu para que el jugador decida que hacer
+            game_state = STATE_MENU;
 
         }
         else if (kc == ALLEGRO_KEY_BACKSPACE) {
