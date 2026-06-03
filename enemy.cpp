@@ -3,6 +3,7 @@
 #include "player.h"
 #include "item.h"
 #include "game.h"
+#include "stage.h"
 #include <math.h>
 #include <stdlib.h>
 #include <allegro5/allegro_audio.h>
@@ -52,6 +53,33 @@ void pattern_spiral(int idx) {
     fire_single(enemy_pool[idx].x, enemy_pool[idx].y, angle, speed, 1);
 }
 
+void pattern_laser_bounce(int idx) {
+    float speed = 4.0f * diff_bullet_speed();
+
+    float angles[] = {
+        0.785f,    // diagonal derecha-abajo
+        2.356f,    // diagonal izquierda-abajo
+        -0.785f,   // diagonal derecha-arriba
+        -2.356f    // diagonal izquierda-arriba
+    };
+
+    for (int d = 0; d < 4; d++) {
+        for (int j = 0; j < 8; j++) {
+            float offset = j * 10.0f;
+            int b = alloc_bullet();
+            if (b == -1) return;
+
+            bullet_pool[b].x = enemy_pool[idx].x + cosf(angles[d]) * offset;
+            bullet_pool[b].y = enemy_pool[idx].y + sinf(angles[d]) * offset;
+            bullet_pool[b].angle = angles[d];
+            bullet_pool[b].speed = speed;
+            bullet_pool[b].owner = 1;
+            bullet_pool[b].bounces = 3;
+            bullet_pool[b].active = 1;
+        }
+    }
+}
+
 // --- patrones agresivos (fase 1 de jefes) ---
 // Cada patron de fase 1 combina dos patrones base
 
@@ -93,13 +121,44 @@ void pattern_spiral_phase2(int idx) {
     fire_single(enemy_pool[idx].x, enemy_pool[idx].y, angle + 3.14159f, speed, 1);
 }
 
+void pattern_boss2_phase3(int idx) {
+    float speed = 3.5f * diff_bullet_speed();
+
+    // pocas balas apuntadas al jugador
+    fire_aimed(enemy_pool[idx].x, enemy_pool[idx].y,
+        player.x, player.y, speed);
+    fire_aimed(enemy_pool[idx].x - 20, enemy_pool[idx].y,
+        player.x, player.y, speed * 0.8f);
+    fire_aimed(enemy_pool[idx].x + 20, enemy_pool[idx].y,
+        player.x, player.y, speed * 0.8f);
+
+    // lazers que rebotan
+    float angles[] = { 0.785f, 2.356f, -0.785f, -2.356f };
+    for (int d = 0; d < 4; d++) {
+        for (int j = 0; j < 5; j++) {
+            float offset = j * 12.0f;
+            int b = alloc_bullet();
+            if (b == -1) return;
+
+            bullet_pool[b].x = enemy_pool[idx].x + cosf(angles[d]) * offset;
+            bullet_pool[b].y = enemy_pool[idx].y + sinf(angles[d]) * offset;
+            bullet_pool[b].angle = angles[d];
+            bullet_pool[b].speed = speed * 1.2f;
+            bullet_pool[b].owner = 1;
+            bullet_pool[b].bounces = 4;
+            bullet_pool[b].active = 1;
+        }
+    }
+}
+
 // tabla normal
 FirePattern pattern_table[] = {
     pattern_aimed,
     pattern_circle,
     pattern_spread,
     pattern_double_circle,
-    pattern_spiral
+    pattern_spiral,
+    pattern_laser_bounce
 };
 
 // tabla fase 2
@@ -108,10 +167,11 @@ FirePattern pattern_table_phase2[] = {
     pattern_circle_phase2,
     pattern_spread_phase2,
     pattern_double_circle_phase2,
-    pattern_spiral_phase2
+    pattern_spiral_phase2,
+    pattern_laser_bounce
 };
 
-#define NUM_PATTERNS 5
+#define NUM_PATTERNS 6
 
 // ================================
 // INICIALIZAR POOL
@@ -150,8 +210,9 @@ void spawn_enemy(float x, float y, float angle, float speed, int hp, int type) {
             enemy_pool[i].type = type % NUM_PATTERNS;
             enemy_pool[i].fire_timer = base_fire;
             enemy_pool[i].phase = 0;
+            enemy_pool[i].sprite_idx = rand() % 5;
             enemy_pool[i].frame_count = 0;
-            break;
+            return;
         }
     }
 }
@@ -210,7 +271,11 @@ void update_enemies() {
         if (enemy_pool[i].fire_timer <= 0) {
             int ptype = enemy_pool[i].type % NUM_PATTERNS;
 
-            if (enemy_pool[i].phase == 1) {
+            if (stage_state.current_stage == 1 && enemy_pool[i].phase == 2) {
+                // fase 3 exclusiva del jefe 2
+                pattern_boss2_phase3(i);
+            }
+            else if (enemy_pool[i].phase == 1) {
                 // fase agresiva: usar tabla de fase 2
                 pattern_table_phase2[ptype](i);
             }
@@ -219,8 +284,8 @@ void update_enemies() {
             }
 
             int base = 60 + diff_fire_rate_bonus();
-            // en fase 2 dispara mas rapido
-            if (enemy_pool[i].phase == 1) base = (int)(base * 0.6f);
+            if (enemy_pool[i].phase == 2) base = (int)(base * 0.4f);  // fase 3 mas rapido
+            else if (enemy_pool[i].phase == 1) base = (int)(base * 0.6f);
             if (base < 12) base = 12;
             enemy_pool[i].fire_timer = base;
         }
@@ -246,37 +311,67 @@ void draw_enemies() {
 
         float x = enemy_pool[i].x;
         float y = enemy_pool[i].y;
-        int   is_boss = (enemy_pool[i].hp > 15);
+        int is_boss = (enemy_pool[i].phase >= 0 && enemy_pool[i].type >= 0
+            && stage_state.boss_active
+            && i == stage_state.boss_idx);
         int   phase2 = (enemy_pool[i].phase == 1);
 
         if (is_boss) {
-            // color: naranja en fase 1, magenta en fase 2
-            ALLEGRO_COLOR boss_col = phase2
-                ? al_map_rgb(220, 50, 220)
-                : al_map_rgb(255, 80, 30);
-            ALLEGRO_COLOR boss_outline = phase2
-                ? al_map_rgb(255, 180, 255)
-                : al_map_rgb(255, 200, 100);
+            // seleccionar sprite segun el stage actual
+            ALLEGRO_BITMAP* spr = NULL;
+            if (stage_state.current_stage == 0) spr = spr_boss1;
+            if (stage_state.current_stage == 1) spr = spr_boss2;
 
-            al_draw_filled_triangle(x, y - 25,
-                x - 20, y + 18,
-                x + 20, y + 18,
-                boss_col);
-            al_draw_triangle(x, y - 25,
-                x - 20, y + 18,
-                x + 20, y + 18,
-                boss_outline, 1.5f);
+            if (spr) {
+                int w = al_get_bitmap_width(spr);
+                int h = al_get_bitmap_height(spr);
+                al_draw_bitmap(spr, x - w / 2.0f, y - h / 2.0f, 0);
 
-            // indicador de fase 2
-            if (phase2) {
-                al_draw_filled_circle(x, y, 5, al_map_rgb(255, 255, 0));
+                // indicador de fase 2 encima del sprite
+                if (enemy_pool[i].phase == 2) {
+                    al_draw_filled_circle(x, y, 5, al_map_rgb(255, 0, 0));     // rojo fase 3
+                }
+                else if (phase2) {
+                    al_draw_filled_circle(x, y, 5, al_map_rgb(255, 255, 0));   // amarillo fase 2
+                }
+            }
+            else {
+                // fallback geometrico para jefes sin sprite todavia
+                ALLEGRO_COLOR boss_col = phase2
+                    ? al_map_rgb(220, 50, 220)
+                    : al_map_rgb(255, 80, 30);
+                ALLEGRO_COLOR boss_outline = phase2
+                    ? al_map_rgb(255, 180, 255)
+                    : al_map_rgb(255, 200, 100);
+
+                al_draw_filled_triangle(x, y - 25,
+                    x - 20, y + 18,
+                    x + 20, y + 18,
+                    boss_col);
+                al_draw_triangle(x, y - 25,
+                    x - 20, y + 18,
+                    x + 20, y + 18,
+                    boss_outline, 1.5f);
+
+                if (phase2) {
+                    al_draw_filled_circle(x, y, 5, al_map_rgb(255, 255, 0));
+                }
             }
         }
         else {
-            al_draw_filled_triangle(x, y - 15,
-                x - 12, y + 10,
-                x + 12, y + 10,
-                al_map_rgb(255, 50, 50));
+            ALLEGRO_BITMAP* spr = spr_enemies[enemy_pool[i].sprite_idx];
+            if (spr) {
+                int w = al_get_bitmap_width(spr);
+                int h = al_get_bitmap_height(spr);
+                al_draw_bitmap(spr, x - w / 2.0f, y - h / 2.0f, 0);
+            }
+            else {
+                // fallback geometrico
+                al_draw_filled_triangle(x, y - 15,
+                    x - 12, y + 10,
+                    x + 12, y + 10,
+                    al_map_rgb(255, 50, 50));
+            }
         }
 
         // barra de vida
