@@ -116,11 +116,11 @@ void fire_secondary() {
     case WEAPON_SPREAD_LASER:
     {
         float spread = 0.35f;
-        for (int i = -3; i <= 3; i++) {
+        for (int i = -2; i <= 2; i++) {
             fire_single(player.x, player.y,
                 up + spread * i, 7.0f, 0);
         }
-        secondary.cooldown = 4;
+        secondary.cooldown = 10;
     }
     break;
 
@@ -195,7 +195,7 @@ void fire_secondary() {
             fire_single(player.x + (i - 1) * 6, player.y,
                 up, 10.0f + i * 0.5f, 0);
         }
-        secondary.cooldown = 3;
+        secondary.cooldown = 10;
         break;
     }
 }
@@ -234,7 +234,7 @@ void update_secondary() {
             secondary.bot_y[i] += (target_y - secondary.bot_y[i]) * 0.2f;
 
             // disparar al enemigo mas cercano desde la posicion del bot
-            if (bot_fire_timer % 20 == i * 5) {
+            if (bot_fire_timer % 35 == i * 5) {
                 int tgt = nearest_enemy();
                 if (tgt >= 0) {
                     float angle = atan2f(
