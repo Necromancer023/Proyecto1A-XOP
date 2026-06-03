@@ -1,4 +1,5 @@
 #define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_image.h>
@@ -39,6 +40,8 @@ ALLEGRO_BITMAP* spr_boss1 = NULL;
 ALLEGRO_BITMAP* spr_boss2 = NULL;
 ALLEGRO_BITMAP* spr_enemies[5] = { NULL };
 ALLEGRO_BITMAP* spr_coin[8] = { NULL };
+ALLEGRO_BITMAP* spr_bullet_player = NULL;
+ALLEGRO_BITMAP* spr_bullet_enemy = NULL;
 
 // ================================
 // SCROLL DE FONDO (estrellas)
@@ -180,6 +183,7 @@ static void draw_hud() {
 // ================================
 static void draw() {
     al_clear_to_color(al_map_rgb(0, 0, 20));
+    al_hold_bitmap_drawing(true);
 
     switch (game_state) {
 
@@ -233,7 +237,7 @@ static void draw() {
     default:
         break;
     }
-
+    al_hold_bitmap_drawing(false);
     al_flip_display();
 }
 
