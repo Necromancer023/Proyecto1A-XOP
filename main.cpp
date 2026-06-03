@@ -35,6 +35,10 @@ GameState game_state = STATE_MENU;
 // SPRITES
 // ================================
 ALLEGRO_BITMAP* spr_player = NULL;
+ALLEGRO_BITMAP* spr_boss1 = NULL;
+ALLEGRO_BITMAP* spr_boss2 = NULL;
+ALLEGRO_BITMAP* spr_enemies[5] = { NULL };
+ALLEGRO_BITMAP* spr_coin[8] = { NULL };
 
 // ================================
 // SCROLL DE FONDO (estrellas)
@@ -312,6 +316,21 @@ int main() {
     al_init_primitives_addon();
     al_init_image_addon();
     spr_player = al_load_bitmap("assets/sprites/player.png");
+    spr_boss1 = al_load_bitmap("assets/sprites/boss1.png");
+    spr_boss2 = al_load_bitmap("assets/sprites/boss2.png");
+    spr_enemies[0] = al_load_bitmap("assets/sprites/enemy1.png");
+    spr_enemies[1] = al_load_bitmap("assets/sprites/enemy2.png");
+    spr_enemies[2] = al_load_bitmap("assets/sprites/enemy3.png");
+    spr_enemies[3] = al_load_bitmap("assets/sprites/enemy4.png");
+    spr_enemies[4] = al_load_bitmap("assets/sprites/enemy5.png");
+    spr_coin[0] = al_load_bitmap("assets/sprites/coin1.png");
+    spr_coin[1] = al_load_bitmap("assets/sprites/coin2.png");
+    spr_coin[2] = al_load_bitmap("assets/sprites/coin3.png");
+    spr_coin[3] = al_load_bitmap("assets/sprites/coin4.png");
+    spr_coin[4] = al_load_bitmap("assets/sprites/coin5.png");
+    spr_coin[5] = al_load_bitmap("assets/sprites/coin6.png");
+    spr_coin[6] = al_load_bitmap("assets/sprites/coin7.png");
+    spr_coin[7] = al_load_bitmap("assets/sprites/coin8.png");
     al_init_font_addon();
     al_init_ttf_addon();
     al_install_audio();
@@ -387,6 +406,12 @@ int main() {
     unload_audio();
     free_tree(score_tree);
     if (spr_player) al_destroy_bitmap(spr_player);
+    if (spr_boss1)  al_destroy_bitmap(spr_boss1);
+    if (spr_boss2) al_destroy_bitmap(spr_boss2);
+    for (int i = 0; i < 5; i++)
+        if (spr_enemies[i]) al_destroy_bitmap(spr_enemies[i]);
+    for (int i = 0; i < 8; i++)
+        if (spr_coin[i]) al_destroy_bitmap(spr_coin[i]);
     al_destroy_font(font);
     al_destroy_timer(timer);
     al_destroy_event_queue(queue);
