@@ -50,16 +50,17 @@ typedef struct {
     float speed;
     int hp;
     int active;
-    int type;           // define qué patrón de disparo usa
-    int fire_timer;     // frames hasta próximo disparo
-    int phase;          // para jefes con múltiples fases
-    int frame_count;    // frames de vida, útil para patrones
+    int type;           // define que patron de disparo usa
+    int fire_timer;     // frames hasta proximo disparo
+    int phase;          // para jefes con multiples fases (0 = normal, 1 = segunda fase)
+    int frame_count;    // frames de vida, util para patrones como espiral
 } Enemy;
 
 typedef struct {
     float x, y;
     int active;
     int value;
+    int type;           // 0 = DAL coin, 1 = Reflect Shield Slot (bomba extra)
 } Item;
 
 // ================================
@@ -83,7 +84,7 @@ typedef enum {
 typedef enum {
     MODE_ORIGINAL = 0,  // velocidad normal
     MODE_SLUDGE = 1,  // camara lenta (FPS reducido a la mitad)
-    MODE_MANIAC = 2,  // accion frenética (FPS y velocidad aumentados)
+    MODE_MANIAC = 2,  // accion frenetica (FPS y velocidad aumentados)
     MODE_MASSACRE = 3   // doble cantidad de enemigos spawneados
 } GameMode;
 
@@ -105,13 +106,13 @@ static inline float diff_bullet_speed() {
 }
 
 static inline int diff_enemy_hp_bonus() {
-    // bonus de HP según dificultad
+    // bonus de HP segun dificultad
     int bonus[8] = { -1, 0, 0, 1, 1, 2, 3, 5 };
     return bonus[difficulty];
 }
 
 static inline int diff_fire_rate_bonus() {
-    // reduccion de frames entre disparos (más negativo = más rápido)
+    // reduccion de frames entre disparos (mas negativo = mas rapido)
     int bonus[8] = { 20, 10, 0, -5, -10, -15, -20, -25 };
     return bonus[difficulty];
 }
