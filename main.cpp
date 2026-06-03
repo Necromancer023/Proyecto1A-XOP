@@ -74,9 +74,9 @@ static void draw_stars() {
 // ================================
 // AUDIO
 // ================================
-static ALLEGRO_SAMPLE* sfx_shoot = NULL;
-static ALLEGRO_SAMPLE* sfx_explode = NULL;
-static ALLEGRO_SAMPLE* sfx_pickup = NULL;
+ALLEGRO_SAMPLE* sfx_shoot = NULL;
+ALLEGRO_SAMPLE* sfx_explode = NULL;
+ALLEGRO_SAMPLE* sfx_pickup = NULL;
 static ALLEGRO_SAMPLE_INSTANCE* music_inst = NULL;
 static ALLEGRO_SAMPLE* music_sample = NULL;
 
@@ -90,7 +90,7 @@ static void load_audio() {
         music_inst = al_create_sample_instance(music_sample);
         al_attach_sample_instance_to_mixer(music_inst, al_get_default_mixer());
         al_set_sample_instance_playmode(music_inst, ALLEGRO_PLAYMODE_LOOP);
-        al_play_sample_instance(music_inst);
+        
     }
 }
 
@@ -126,6 +126,12 @@ void start_new_game() {
     default:
         al_set_timer_speed(timer, 1.0 / FPS);
         break;
+    }
+
+    // iniciar musica al comenzar partida
+    if (music_inst) {
+        al_stop_sample_instance(music_inst);
+        al_play_sample_instance(music_inst);
     }
 
     game_state = STATE_PLAYING;
