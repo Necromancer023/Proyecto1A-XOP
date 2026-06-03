@@ -382,12 +382,11 @@ int main() {
         else if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
             running = false;
         }
-        else if (ev.type == ALLEGRO_EVENT_KEY_DOWN ||
-            ev.type == ALLEGRO_EVENT_KEY_CHAR) {
+        else if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
             handle_key(&ev);
-
-            if (game_state == STATE_NAME_ENTRY &&
-                ev.type == ALLEGRO_EVENT_KEY_CHAR) {
+        }
+        else if (ev.type == ALLEGRO_EVENT_KEY_CHAR) {
+            if (game_state == STATE_NAME_ENTRY) {
                 update_name_entry(&ev);
             }
         }
