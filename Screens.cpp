@@ -225,27 +225,72 @@ void update_options(ALLEGRO_EVENT* ev) {
 void draw_game_over() {
     al_clear_to_color(al_map_rgb(5, 0, 0));
     al_draw_text(font, al_map_rgb(255, 30, 30),
-        SCREEN_W / 2.0f, SCREEN_H / 2.0f - 60,
+        SCREEN_W / 2.0f, SCREEN_H / 2.0f - 80,
         ALLEGRO_ALIGN_CENTER, "GAME OVER");
     al_draw_textf(font, al_map_rgb(200, 200, 200),
-        SCREEN_W / 2.0f, SCREEN_H / 2.0f - 20,
+        SCREEN_W / 2.0f, SCREEN_H / 2.0f - 45,
         ALLEGRO_ALIGN_CENTER, "Puntaje: %d", player.score);
     al_draw_textf(font, al_map_rgb(150, 150, 150),
-        SCREEN_W / 2.0f, SCREEN_H / 2.0f + 5,
+        SCREEN_W / 2.0f, SCREEN_H / 2.0f - 20,
         ALLEGRO_ALIGN_CENTER, "Disparos: %d | Aciertos: %d | Fallos: %d",
         player.shots_fired, player.shots_hit, player.shots_missed);
+
+    // campo de nombre
+    al_draw_text(font, al_map_rgb(200, 200, 255),
+        SCREEN_W / 2.0f, SCREEN_H / 2.0f + 15,
+        ALLEGRO_ALIGN_CENTER, "Ingresa tu nombre:");
+
+    float bx = SCREEN_W / 2.0f - 100;
+    float by = SCREEN_H / 2.0f + 30;
+    al_draw_filled_rectangle(bx, by, bx + 200, by + 30,
+        al_map_rgb(10, 10, 50));
+    al_draw_rectangle(bx, by, bx + 200, by + 30,
+        al_map_rgb(100, 100, 200), 1.5f);
+
+    char display[52];
+    snprintf(display, sizeof(display), "%s_", name_entry_buffer);
+    al_draw_text(font, al_map_rgb(255, 255, 255),
+        SCREEN_W / 2.0f, by + 8, ALLEGRO_ALIGN_CENTER, display);
+
     al_draw_text(font, al_map_rgb(150, 150, 100),
-        SCREEN_W / 2.0f, SCREEN_H / 2.0f + 50,
+        SCREEN_W / 2.0f, SCREEN_H / 2.0f + 80,
         ALLEGRO_ALIGN_CENTER, "Enter: jugar de nuevo  |  Esc: menu");
 }
 
 void update_game_over(ALLEGRO_EVENT* ev) {
+    // capturar escritura del nombre
+    if (ev->type == ALLEGRO_EVENT_KEY_CHAR) {
+        int kc = ev->keyboard.keycode;
+        if (kc == ALLEGRO_KEY_BACKSPACE) {
+            if (name_entry_len > 0)
+                name_entry_buffer[--name_entry_len] = '\0';
+        }
+        else if (kc != ALLEGRO_KEY_ENTER && kc != ALLEGRO_KEY_ESCAPE
+            && name_entry_len < 15) {
+            int ch = ev->keyboard.unichar;
+            if (ch >= 32 && ch < 127) {
+                name_entry_buffer[name_entry_len++] = (char)ch;
+                name_entry_buffer[name_entry_len] = '\0';
+            }
+        }
+        return;
+    }
+
     if (ev->type != ALLEGRO_EVENT_KEY_DOWN) return;
+
     if (ev->keyboard.keycode == ALLEGRO_KEY_ENTER) {
+        if (name_entry_len == 0) {
+            strncpy(name_entry_buffer, "Anonimo", 49);
+            name_entry_len = 7;
+        }
+        name_entry_done = 1;
+        save_current_game(name_entry_buffer);
         screens_init();
-        game_state = STATE_NAME_ENTRY;
+        start_new_game();
     }
     if (ev->keyboard.keycode == ALLEGRO_KEY_ESCAPE) {
+        save_current_game(name_entry_len > 0 ? name_entry_buffer : "Abandonado");
+        screens_init();
         game_state = STATE_MENU;
     }
 }

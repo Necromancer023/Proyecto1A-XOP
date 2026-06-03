@@ -388,6 +388,9 @@ int main() {
             if (game_state == STATE_NAME_ENTRY) {
                 update_name_entry(&ev);
             }
+            else if (game_state == STATE_GAME_OVER) {
+                update_game_over(&ev);
+            }
         }
 
         if (game_state == STATE_QUIT) {
