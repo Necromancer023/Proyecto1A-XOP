@@ -11,83 +11,128 @@ Item item_pool[MAX_ITEMS];
 
 // ================================
 // INICIALIZAR POOL
-// marca todos los slots como inactivos
 // ================================
 void init_item_pool() {
     for (int i = 0; i < MAX_ITEMS; i++) {
         item_pool[i].active = 0;
+        item_pool[i].type = 0;
+        item_pool[i].value = 0;
     }
+}
+
+// ================================
+// HELPER INTERNO: busca slot libre
+// ================================
+static int alloc_item() {
+    for (int i = 0; i < MAX_ITEMS; i++) {
+        if (!item_pool[i].active) return i;
+    }
+    return -1;
 }
 
 // ================================
 // SPAWNEAR MONEDA DAL
-// busca primer slot inactivo y
-// configura la moneda en esa posicion
 // ================================
 void spawn_dal(float x, float y) {
-    for (int i = 0; i < MAX_ITEMS; i++) {
-        if (item_pool[i].active) continue;
+    int i = alloc_item();
+    if (i == -1) return;
 
-        item_pool[i].x = x;
-        item_pool[i].y = y;
-        item_pool[i].active = 1;
-        item_pool[i].value = 50;   // valor base de cada moneda DAL
-        return;
-    }
+    item_pool[i].x = x;
+    item_pool[i].y = y;
+    item_pool[i].active = 1;
+    item_pool[i].type = 0;      // DAL coin
+    item_pool[i].value = 50;     // valor base
+}
+
+// ================================
+// SPAWNEAR REFLECT SHIELD SLOT
+// El jugador gana una bomba extra al recogerla
+// ================================
+void spawn_bomb_slot(float x, float y) {
+    int i = alloc_item();
+    if (i == -1) return;
+
+    item_pool[i].x = x;
+    item_pool[i].y = y;
+    item_pool[i].active = 1;
+    item_pool[i].type = 1;      // Reflect Shield Slot
+    item_pool[i].value = 1;      // da 1 bomba
 }
 
 // ================================
 // ACTUALIZAR ITEMS
-// mueve las monedas hacia abajo,
-// detecta si el jugador las recoge
-// y elimina las que salen de pantalla
 // ================================
 void update_items() {
     for (int i = 0; i < MAX_ITEMS; i++) {
         if (!item_pool[i].active) continue;
 
-        // caer hacia abajo
-        item_pool[i].y += 2.0f;
+        // caer hacia abajo 
+        item_pool[i].y += (item_pool[i].type == 1) ? 1.2f : 2.0f;
 
-        // verificar si el jugador la recoge
+        // distancia al jugador
         float dx = item_pool[i].x - player.x;
         float dy = item_pool[i].y - player.y;
-        float dist = sqrt(dx * dx + dy * dy);
+        float dist = sqrtf(dx * dx + dy * dy);
 
-        if (dist <= 20.0f) {
-            // recoger moneda
-            player.score += item_pool[i].value;
-            player.combo++;
+        // radio de recoleccion mas grande para bombas 
+        float pickup_r = (item_pool[i].type == 1) ? 28.0f : 20.0f;
+
+        if (dist <= pickup_r) {
+            if (item_pool[i].type == 0) {
+                // DAL coin: suma puntos y combo
+                player.score += item_pool[i].value;
+                player.combo++;
+            }
+            else {
+                // Reflect Shield Slot: suma una bomba 9 maximo
+                if (player.bombs < 9) player.bombs++;
+            }
             item_pool[i].active = 0;
             continue;
         }
 
-        // eliminar si sale de pantalla — pierde combo
+        // eliminar si sale de pantalla
         if (item_pool[i].y > SCREEN_H + 10) {
             item_pool[i].active = 0;
-            player.combo = 0;   // perder combo si no la recoge
+            // solo las DAL coins rompen el combo
+            if (item_pool[i].type == 0) player.combo = 0;
         }
     }
 }
 
 // ================================
 // DIBUJAR ITEMS
-// moneda amarilla pequeña —
-// reemplazar con sprite despues
+// DAL coin: circulo amarillo
+// Reflect Shield Slot: diamante cian
 // ================================
 void draw_items() {
     for (int i = 0; i < MAX_ITEMS; i++) {
         if (!item_pool[i].active) continue;
 
-        al_draw_filled_circle(
-            item_pool[i].x, item_pool[i].y,
-            6, al_map_rgb(255, 220, 0)  // amarillo
-        );
+        float x = item_pool[i].x;
+        float y = item_pool[i].y;
 
-        // borde para que se vea mejor
-        al_draw_circle(
-            item_pool[i].x, item_pool[i].y,
-            6, al_map_rgb(255, 255, 100), 1.0f
-        );
+        if (item_pool[i].type == 0) {
+            // DAL coin: circulo amarillo 
+            al_draw_filled_circle(x, y, 6, al_map_rgb(255, 220, 0));
+            al_draw_circle(x, y, 6, al_map_rgb(255, 255, 100), 1.0f);
+        }
+        else {
+            // Reflect Shield Slot:  (mas visible)
+            al_draw_filled_triangle(x, y - 9,
+                x - 7, y,
+                x, y + 9,
+                al_map_rgb(0, 220, 255));
+            al_draw_filled_triangle(x, y - 9,
+                x + 7, y,
+                x, y + 9,
+                al_map_rgb(0, 220, 255));
+            al_draw_triangle(x, y - 9,
+                x - 7, y,
+                x + 7, y,
+                al_map_rgb(150, 255, 255), 1.0f);
+            // etiqueta pequeña
+            
+        }
     }
 }
