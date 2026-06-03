@@ -117,4 +117,12 @@ static inline int diff_fire_rate_bonus() {
     return bonus[difficulty];
 }
 
+// ================================
+// AUDIO — declaraciones externas
+// ================================
+#include <allegro5/allegro_audio.h>
+extern ALLEGRO_SAMPLE* sfx_shoot;
+extern ALLEGRO_SAMPLE* sfx_explode;
+extern ALLEGRO_SAMPLE* sfx_pickup;
+
 #endif
