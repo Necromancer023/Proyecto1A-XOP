@@ -43,19 +43,34 @@ void update_bullets() {
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (!bullet_pool[i].active) continue;
 
-        // mover con coordenadas polares (estilo Touhou)
-        bullet_pool[i].x += cos(bullet_pool[i].angle) * bullet_pool[i].speed;
-        bullet_pool[i].y += sin(bullet_pool[i].angle) * bullet_pool[i].speed;
+        bullet_pool[i].x += cosf(bullet_pool[i].angle) * bullet_pool[i].speed;
+        bullet_pool[i].y += sinf(bullet_pool[i].angle) * bullet_pool[i].speed;
 
-        // eliminar si sale de pantalla
-        if (bullet_pool[i].x < 0 || bullet_pool[i].x > SCREEN_W ||
-            bullet_pool[i].y < 0 || bullet_pool[i].y > SCREEN_H) {
-            
-            // solo contar fallos de balas del jugador
-            if (bullet_pool[i].owner == 0) {
-                player.shots_missed++;
+        // rebote en paredes laterales
+        if (bullet_pool[i].bounces > 0) {
+            if (bullet_pool[i].x < 4) {
+                bullet_pool[i].x = 4;
+                bullet_pool[i].angle = 3.14159f - bullet_pool[i].angle;
+                bullet_pool[i].bounces--;
             }
-            
+            if (bullet_pool[i].x > SCREEN_W - 4) {
+                bullet_pool[i].x = SCREEN_W - 4;
+                bullet_pool[i].angle = 3.14159f - bullet_pool[i].angle;
+                bullet_pool[i].bounces--;
+            }
+        }
+
+        // eliminar si sale por arriba o abajo
+        if (bullet_pool[i].y < 0 || bullet_pool[i].y > SCREEN_H) {
+            if (bullet_pool[i].owner == 0) player.shots_missed++;
+            free_bullet(i);
+            continue;
+        }
+
+        // eliminar si sale por los lados sin rebotes
+        if (bullet_pool[i].bounces == 0 &&
+            (bullet_pool[i].x < 0 || bullet_pool[i].x > SCREEN_W)) {
+            if (bullet_pool[i].owner == 0) player.shots_missed++;
             free_bullet(i);
         }
     }
@@ -91,6 +106,7 @@ void fire_single(float x, float y, float angle, float speed, int owner) {
     bullet_pool[idx].angle = angle;
     bullet_pool[idx].speed = speed;
     bullet_pool[idx].owner = owner;
+    bullet_pool[idx].bounces = 0;
     bullet_pool[idx].active = 1;
 }
 
