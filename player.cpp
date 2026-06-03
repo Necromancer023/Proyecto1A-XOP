@@ -4,6 +4,7 @@
 #include "game.h"
 #include <math.h>
 #include <allegro5/allegro.h>
+#include <allegro5/allegro_audio.h>
 #include <allegro5/allegro_primitives.h>
 
 // ================================
@@ -167,6 +168,10 @@ void update_player() {
 // ================================
 void player_shoot() {
     player.shots_fired++;
+
+    // sonido de disparo
+    if (sfx_shoot)
+        al_play_sample(sfx_shoot, 0.6f, 0.0f, 1.0f, ALLEGRO_PLAYMODE_ONCE, NULL);
 
     float up = -3.14159f / 2.0f;
 
