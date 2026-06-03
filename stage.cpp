@@ -65,7 +65,7 @@ StageDescriptor stages[MAX_STAGES] = {
             { 4, 6,  1.6f, 4, 30, 3 },
             { 3, 5,  1.3f, 5, 50, 1 },
         },
-        1, 3, BOSS_HP_BASE + 20, 0.9f
+        1, 3, BOSS_HP_BASE + 60, 0.9f
     },
 
     // ----------------------------
