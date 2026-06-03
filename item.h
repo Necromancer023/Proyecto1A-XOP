@@ -4,7 +4,9 @@
 #include "game.h"
 
 // ================================
-// POOL DE ITEMS (monedas DAL)
+// POOL DE ITEMS
+// type 0 = DAL coin (puntos + combo)
+// type 1 = Reflect Shield Slot (bomba extra)
 // ================================
 extern Item item_pool[MAX_ITEMS];
 
@@ -13,6 +15,7 @@ extern Item item_pool[MAX_ITEMS];
 // ================================
 void init_item_pool();
 void spawn_dal(float x, float y);
+void spawn_bomb_slot(float x, float y);   
 void update_items();
 void draw_items();
 
