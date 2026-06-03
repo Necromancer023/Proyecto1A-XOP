@@ -83,7 +83,6 @@ void draw_bullets() {
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (!bullet_pool[i].active) continue;
 
-        // jugador = azul, enemigo = rojo
         ALLEGRO_COLOR color = (bullet_pool[i].owner == 0)
             ? al_map_rgb(0, 150, 255)
             : al_map_rgb(255, 50, 50);
