@@ -29,6 +29,7 @@ typedef struct {
     float speed;
     int active;
     int owner;      // 0 = jugador, 1 = enemigo
+    int bounces;
 } Bullet;
 
 typedef struct {
@@ -54,6 +55,7 @@ typedef struct {
     int fire_timer;     // frames hasta proximo disparo
     int phase;          // para jefes con multiples fases (0 = normal, 1 = segunda fase)
     int frame_count;    // frames de vida, util para patrones como espiral
+    int sprite_idx;
 } Enemy;
 
 typedef struct {
@@ -61,6 +63,8 @@ typedef struct {
     int active;
     int value;
     int type;           // 0 = DAL coin, 1 = Reflect Shield Slot (bomba extra)
+    int anim_frame;
+    int anim_timer;
 } Item;
 
 // ================================
@@ -118,12 +122,16 @@ static inline int diff_fire_rate_bonus() {
 }
 
 // ================================
-// AUDIO — declaraciones externas
+// AUDIO/SPRITES — declaraciones externas
 // ================================
 #include <allegro5/allegro_audio.h>
 extern ALLEGRO_SAMPLE* sfx_shoot;
 extern ALLEGRO_SAMPLE* sfx_explode;
 extern ALLEGRO_SAMPLE* sfx_pickup;
 extern ALLEGRO_BITMAP* spr_player;
+extern ALLEGRO_BITMAP* spr_boss1;
+extern ALLEGRO_BITMAP* spr_boss2;
+extern ALLEGRO_BITMAP* spr_enemies[5];
+extern ALLEGRO_BITMAP* spr_coin[8];
 
 #endif
