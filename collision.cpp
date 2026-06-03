@@ -2,6 +2,7 @@
 #include "bullet.h"
 #include "enemy.h"
 #include "player.h"
+#include "stage.h"
 #include <math.h>
 
 // ================================
@@ -41,14 +42,22 @@ void check_player_hit() {
 void check_enemy_hit() {
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (!bullet_pool[i].active)   continue;
-        if (bullet_pool[i].owner != 0) continue;  // solo balas del jugador
+        if (bullet_pool[i].owner != 0) continue;
 
         for (int j = 0; j < MAX_ENEMIES; j++) {
             if (!enemy_pool[j].active) continue;
 
+            // hitbox para el jefe 3 (solo la esfera central)
+            float enemy_radius = 15.0f;  // radio normal
+            if (stage_state.boss_active &&
+                j == stage_state.boss_idx &&
+                stage_state.current_stage == 2) {
+                enemy_radius = 40.0f;  // solo la esfera del centro
+            }
+
             if (circles_collide(
-                bullet_pool[i].x, bullet_pool[i].y, 3.0f,   // hitbox bala
-                enemy_pool[j].x, enemy_pool[j].y, 15.0f)) { // hitbox enemigo
+                bullet_pool[i].x, bullet_pool[i].y, 3.0f,
+                enemy_pool[j].x, enemy_pool[j].y, enemy_radius)) {
 
                 free_bullet(i);
                 enemy_pool[j].hp--;
@@ -57,8 +66,7 @@ void check_enemy_hit() {
                 if (enemy_pool[j].hp <= 0) {
                     enemy_die(j);
                 }
-
-                break;  // una bala solo golpea un enemigo
+                break;
             }
         }
     }
