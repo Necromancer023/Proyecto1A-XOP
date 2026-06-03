@@ -308,19 +308,30 @@ void update_stage() {
                 boss->fire_timer = 20;
             }
 
+            // fase 3 exclusiva del jefe 2
+            if (stage_state.current_stage == 1 &&
+                boss->phase == 1 && boss->hp <= boss_hp_max / 4) {
+                boss->phase = 2;
+                boss->fire_timer = 15;
+            }
+
             // --- movimiento del jefe ---
-            if (boss->y < 80.0f) {
+            float stop_y = 80.0f;
+            if (stage_state.current_stage == 1) stop_y = 150.0f;  // jefe 2 mas abajo
+
+            if (boss->y < stop_y) {
                 boss->y += boss->speed;
             }
             else {
                 // serpentina horizontal
-                float freq = (boss->phase == 1) ? 0.035f : 0.02f;
-                float amp = (boss->phase == 1) ? 200.0f : 180.0f;
+                float freq = (boss->phase >= 1) ? 0.035f : 0.02f;
+                float amp = (boss->phase >= 1) ? 200.0f : 180.0f;
                 boss->x = SCREEN_W / 2.0f + sinf(boss->frame_count * freq) * amp;
 
                 // en fase 2 tambien se mueve verticalmente
-                if (boss->phase == 1) {
-                    boss->y = 80.0f + sinf(boss->frame_count * 0.018f) * 40.0f;
+                if (boss->phase >= 1) {
+                    float base_y = (stage_state.current_stage == 1) ? 150.0f : 80.0f;
+                    boss->y = base_y + sinf(boss->frame_count * 0.018f) * 40.0f;
                 }
             }
         }
@@ -460,7 +471,8 @@ void draw_stage_hud() {
             al_map_rgb(200, 100, 100), 1.0f);
 
         // texto: muestra la fase actual
-        const char* boss_label = (boss->phase == 1) ? "-- JEFE FASE 2 --" : "-- JEFE --";
+        const char* boss_label = (boss->phase == 2) ? "-- JEFE FASE 3 --" :
+                                 (boss->phase == 1) ? "-- JEFE FASE 2 --" : "-- JEFE --";
         al_draw_text(font, al_map_rgb(255, 100, 100),
             SCREEN_W / 2.0f, bar_y - 14,
             ALLEGRO_ALIGN_CENTER, boss_label);
