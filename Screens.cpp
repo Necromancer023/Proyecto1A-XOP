@@ -110,9 +110,9 @@ void update_menu(ALLEGRO_EVENT* ev) {
     case ALLEGRO_KEY_ENTER:
     case ALLEGRO_KEY_Z:
         switch (menu_sel) {
-        case 0: // Jugar — primero pedir nombre, luego arrancar
+        case 0: // Jugar — iniciar partida directamente
             screens_init();
-            game_state = STATE_NAME_ENTRY;
+            start_new_game();
             break;
         case 1: // Opciones
             game_state = STATE_OPTIONS;
