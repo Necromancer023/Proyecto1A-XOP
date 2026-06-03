@@ -38,6 +38,7 @@ GameState game_state = STATE_MENU;
 ALLEGRO_BITMAP* spr_player = NULL;
 ALLEGRO_BITMAP* spr_boss1 = NULL;
 ALLEGRO_BITMAP* spr_boss2 = NULL;
+ALLEGRO_BITMAP* spr_boss3 = NULL;
 ALLEGRO_BITMAP* spr_enemies[5] = { NULL };
 ALLEGRO_BITMAP* spr_coin[8] = { NULL };
 ALLEGRO_BITMAP* spr_bullet_player = NULL;
@@ -319,6 +320,7 @@ int main() {
     spr_player = al_load_bitmap("assets/sprites/player.png");
     spr_boss1 = al_load_bitmap("assets/sprites/boss1.png");
     spr_boss2 = al_load_bitmap("assets/sprites/boss2.png");
+    spr_boss3 = al_load_bitmap("assets/sprites/boss3.png");
     spr_enemies[0] = al_load_bitmap("assets/sprites/enemy1.png");
     spr_enemies[1] = al_load_bitmap("assets/sprites/enemy2.png");
     spr_enemies[2] = al_load_bitmap("assets/sprites/enemy3.png");
@@ -408,6 +410,7 @@ int main() {
     if (spr_player) al_destroy_bitmap(spr_player);
     if (spr_boss1)  al_destroy_bitmap(spr_boss1);
     if (spr_boss2) al_destroy_bitmap(spr_boss2);
+    if (spr_boss3) al_destroy_bitmap(spr_boss3);
     for (int i = 0; i < 5; i++)
         if (spr_enemies[i]) al_destroy_bitmap(spr_enemies[i]);
     for (int i = 0; i < 8; i++)
