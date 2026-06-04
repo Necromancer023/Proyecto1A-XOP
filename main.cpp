@@ -27,6 +27,9 @@ ALLEGRO_DISPLAY* display = NULL;
 ALLEGRO_TIMER* timer = NULL;
 ALLEGRO_EVENT_QUEUE* queue = NULL;
 ALLEGRO_FONT* font = NULL;
+float boss4_fade = 0.0f;   // 0.0 = transparente, 1.0 = opaco
+int   boss4_appearing = 0;  // 1 cuando el jefe esta apareciendo
+
 
 GameMode  game_mode = MODE_ORIGINAL;
 int       difficulty = 2;             // Normal por defecto
@@ -128,6 +131,8 @@ void start_new_game() {
     init_secondary(WEAPON_BOTS);
     init_stars();
     bg_offset = 0.0f;
+    boss4_fade = 0.0f;
+    boss4_appearing = 0;
 
     switch (game_mode) {
     case MODE_SLUDGE:
@@ -149,6 +154,7 @@ void start_new_game() {
     }
 
     game_state = STATE_PLAYING;
+
 }
 
 // ================================
@@ -272,6 +278,23 @@ static void update() {
     if (game_state == STATE_VICTORY) {
         // el guardado ocurre en name_entry al confirmar nombre
     }
+
+    // activar fade del jefe 4
+    if (stage_state.boss_active &&
+        stage_state.current_stage == 3 &&
+        !boss4_appearing && boss4_fade < 1.0f) {
+        boss4_appearing = 1;
+    }
+
+    // incrementar fade gradualmente
+    if (boss4_appearing && boss4_fade < 1.0f) {
+        boss4_fade += 0.01f;  // tarda 100 frames en aparecer
+        if (boss4_fade >= 1.0f) {
+            boss4_fade = 1.0f;
+            boss4_appearing = 0;
+        }
+    }
+
 }
 
 // ================================
