@@ -134,5 +134,6 @@ extern ALLEGRO_BITMAP* spr_boss2;
 extern ALLEGRO_BITMAP* spr_enemies[5];
 extern ALLEGRO_BITMAP* spr_coin[8];
 extern ALLEGRO_BITMAP* spr_boss3;
+extern ALLEGRO_BITMAP* spr_boss4;
 
 #endif
