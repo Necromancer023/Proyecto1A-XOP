@@ -275,9 +275,8 @@ static void update() {
 
     // verificar victoria
     // guardar el score de inmediato.
-    if (game_state == STATE_VICTORY) {
+ 
         // el guardado ocurre en name_entry al confirmar nombre
-    }
 
     // activar fade del jefe 4
     if (stage_state.boss_active &&
@@ -312,6 +311,7 @@ static void handle_key(ALLEGRO_EVENT* ev) {
     }
 
     if (ev->type != ALLEGRO_EVENT_KEY_DOWN) return;
+
 
     switch (ev->keyboard.keycode) {
     case ALLEGRO_KEY_P:
@@ -428,6 +428,9 @@ int main() {
             }
             else if (game_state == STATE_GAME_OVER) {
                 update_game_over(&ev);
+            }
+            else if (game_state == STATE_VICTORY) {
+                update_victory(&ev);
             }
         }
 
