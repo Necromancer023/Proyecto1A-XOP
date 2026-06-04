@@ -39,6 +39,7 @@ ALLEGRO_BITMAP* spr_player = NULL;
 ALLEGRO_BITMAP* spr_boss1 = NULL;
 ALLEGRO_BITMAP* spr_boss2 = NULL;
 ALLEGRO_BITMAP* spr_boss3 = NULL;
+ALLEGRO_BITMAP* spr_boss4 = NULL;
 ALLEGRO_BITMAP* spr_enemies[5] = { NULL };
 ALLEGRO_BITMAP* spr_coin[8] = { NULL };
 ALLEGRO_BITMAP* spr_bullet_player = NULL;
@@ -200,11 +201,11 @@ static void draw() {
     case STATE_PAUSED:
         // fondo con estrellas en scroll
         draw_stars();
-        draw_bullets();
         draw_enemies();
         draw_items();
-        draw_secondary();
         draw_player();
+        draw_bullets();
+        draw_secondary();
         draw_hud();
 
         if (game_state == STATE_PAUSED) {
@@ -306,6 +307,19 @@ static void handle_key(ALLEGRO_EVENT* ev) {
             game_state = STATE_MENU;
         }
         break;
+
+    case ALLEGRO_KEY_F4:
+        // debug — saltar al jefe 4
+        if (game_state == STATE_PLAYING) {
+            init_bullet_pool();
+            init_enemy_pool();
+            init_item_pool();
+            stage_state.current_stage = 3;
+            stage_state.current_wave = 8;
+            stage_state.boss_active = 0;
+            stage_state.wave_timer = 1;
+        }
+        break;
     }
 }
 
@@ -321,6 +335,7 @@ int main() {
     spr_boss1 = al_load_bitmap("assets/sprites/boss1.png");
     spr_boss2 = al_load_bitmap("assets/sprites/boss2.png");
     spr_boss3 = al_load_bitmap("assets/sprites/boss3.png");
+    spr_boss4 = al_load_bitmap("assets/sprites/boss4.png");
     spr_enemies[0] = al_load_bitmap("assets/sprites/enemy1.png");
     spr_enemies[1] = al_load_bitmap("assets/sprites/enemy2.png");
     spr_enemies[2] = al_load_bitmap("assets/sprites/enemy3.png");
@@ -414,6 +429,7 @@ int main() {
     if (spr_boss1)  al_destroy_bitmap(spr_boss1);
     if (spr_boss2) al_destroy_bitmap(spr_boss2);
     if (spr_boss3) al_destroy_bitmap(spr_boss3);
+    if (spr_boss4) al_destroy_bitmap(spr_boss4);
     for (int i = 0; i < 5; i++)
         if (spr_enemies[i]) al_destroy_bitmap(spr_enemies[i]);
     for (int i = 0; i < 8; i++)
@@ -425,3 +441,4 @@ int main() {
 
     return 0;
 }
+
