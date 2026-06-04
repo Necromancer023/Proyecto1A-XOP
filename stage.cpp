@@ -216,8 +216,8 @@ void spawn_boss(int stage_idx) {
     StageDescriptor* sd = &stages[stage_idx];
 
     int   hp = sd->boss_hp + (stage_state.second_loop ? 20 : 0);
-    float x = SCREEN_W / 2.0f;
-    float y = -60.0f;
+    float x = (stage_idx == 3) ? 240.0f : SCREEN_W / 2.0f;
+    float y = (stage_idx == 3) ? 320.0f : -60.0f;
 
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (enemy_pool[i].active) continue;
@@ -225,7 +225,7 @@ void spawn_boss(int stage_idx) {
         enemy_pool[i].x = x;
         enemy_pool[i].y = y;
         enemy_pool[i].angle = 1.5708f;
-        enemy_pool[i].speed = 0.8f;
+        enemy_pool[i].speed = (stage_idx == 3) ? 0.0f : 0.8f;
         enemy_pool[i].hp = hp;
         enemy_pool[i].active = 1;
         enemy_pool[i].type = sd->boss_type;
@@ -235,9 +235,6 @@ void spawn_boss(int stage_idx) {
 
         stage_state.boss_idx = i;
         stage_state.boss_active = 1;
-
-        // guardar el HP maximo del jefe para saber cuando activar fase 2
-       
         return;
     }
 }
@@ -316,22 +313,27 @@ void update_stage() {
             }
 
             // --- movimiento del jefe ---
-            float stop_y = 80.0f;
-            if (stage_state.current_stage == 1) stop_y = 150.0f;  // jefe 2 mas abajo
-
-            if (boss->y < stop_y) {
-                boss->y += boss->speed;
+            if (stage_state.current_stage == 3) {
+                // jefe 4 fijo siempre en la esfera
+                boss->x = 240.0f;
+                boss->y = 320.0f;
             }
             else {
-                // serpentina horizontal
-                float freq = (boss->phase >= 1) ? 0.035f : 0.02f;
-                float amp = (boss->phase >= 1) ? 200.0f : 180.0f;
-                boss->x = SCREEN_W / 2.0f + sinf(boss->frame_count * freq) * amp;
+                float stop_y = 80.0f;
+                if (stage_state.current_stage == 1) stop_y = 150.0f;
 
-                // en fase 2 tambien se mueve verticalmente
-                if (boss->phase >= 1) {
-                    float base_y = (stage_state.current_stage == 1) ? 150.0f : 80.0f;
-                    boss->y = base_y + sinf(boss->frame_count * 0.018f) * 40.0f;
+                if (boss->y < stop_y) {
+                    boss->y += boss->speed;
+                }
+                else {
+                    float freq = (boss->phase >= 1) ? 0.035f : 0.02f;
+                    float amp = (boss->phase >= 1) ? 200.0f : 180.0f;
+                    boss->x = SCREEN_W / 2.0f + sinf(boss->frame_count * freq) * amp;
+
+                    if (boss->phase >= 1) {
+                        float base_y = (stage_state.current_stage == 1) ? 150.0f : 80.0f;
+                        boss->y = base_y + sinf(boss->frame_count * 0.018f) * 40.0f;
+                    }
                 }
             }
         }
