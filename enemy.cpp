@@ -314,30 +314,44 @@ void draw_enemies() {
         int is_boss = (enemy_pool[i].phase >= 0 && enemy_pool[i].type >= 0
             && stage_state.boss_active
             && i == stage_state.boss_idx);
-        int   phase2 = (enemy_pool[i].phase == 1);
+        int phase2 = (enemy_pool[i].phase == 1);
 
         if (is_boss) {
-            // seleccionar sprite segun el stage actual
             ALLEGRO_BITMAP* spr = NULL;
             if (stage_state.current_stage == 0) spr = spr_boss1;
             if (stage_state.current_stage == 1) spr = spr_boss2;
             if (stage_state.current_stage == 2) spr = spr_boss3;
+            if (stage_state.current_stage == 3) spr = spr_boss4;
 
             if (spr) {
-                int w = al_get_bitmap_width(spr);
-                int h = al_get_bitmap_height(spr);
-                al_draw_bitmap(spr, x - w / 2.0f, y - h / 2.0f, 0);
-
-                // indicador de fase 2 encima del sprite
-                if (enemy_pool[i].phase == 2) {
-                    al_draw_filled_circle(x, y, 5, al_map_rgb(255, 0, 0));     // rojo fase 3
+                if (stage_state.current_stage == 3) {
+                    // jefe 4 siempre centrado en pantalla ignorando x
+                    al_draw_scaled_bitmap(spr,
+                        0, 0,
+                        al_get_bitmap_width(spr),
+                        al_get_bitmap_height(spr),
+                        0, 0,
+                        SCREEN_W, SCREEN_H,
+                        0);
                 }
-                else if (phase2) {
-                    al_draw_filled_circle(x, y, 5, al_map_rgb(255, 255, 0));   // amarillo fase 2
+                else {
+                    int w = al_get_bitmap_width(spr);
+                    int h = al_get_bitmap_height(spr);
+                    al_draw_bitmap(spr, x - w / 2.0f, y - h / 2.0f, 0);
+                }
+
+                // indicadores de fase — no para jefe 4
+                if (stage_state.current_stage != 3) {
+                    if (enemy_pool[i].phase == 2) {
+                        al_draw_filled_circle(x, y, 5, al_map_rgb(255, 0, 0));
+                    }
+                    else if (phase2) {
+                        al_draw_filled_circle(x, y, 5, al_map_rgb(255, 255, 0));
+                    }
                 }
             }
             else {
-                // fallback geometrico para jefes sin sprite todavia
+                // fallback geometrico para jefes sin sprite
                 ALLEGRO_COLOR boss_col = phase2
                     ? al_map_rgb(220, 50, 220)
                     : al_map_rgb(255, 80, 30);
@@ -367,7 +381,6 @@ void draw_enemies() {
                 al_draw_bitmap(spr, x - w / 2.0f, y - h / 2.0f, 0);
             }
             else {
-                // fallback geometrico
                 al_draw_filled_triangle(x, y - 15,
                     x - 12, y + 10,
                     x + 12, y + 10,
@@ -375,19 +388,21 @@ void draw_enemies() {
             }
         }
 
-        // barra de vida
-        float max_hp = is_boss ? (float)enemy_pool[i].hp : 5.0f;
-        float hp_ratio = (float)enemy_pool[i].hp / max_hp;
-        if (hp_ratio > 1) hp_ratio = 1;
-        float bar_w = is_boss ? 40.0f : 30.0f;
-        float bar_top = y - (is_boss ? 32.0f : 22.0f);
+        // barra de vida — no para jefe 4
+        if (stage_state.current_stage != 3) {
+            float max_hp = is_boss ? (float)enemy_pool[i].hp : 5.0f;
+            float hp_ratio = (float)enemy_pool[i].hp / max_hp;
+            if (hp_ratio > 1) hp_ratio = 1;
+            float bar_w = is_boss ? 40.0f : 30.0f;
+            float bar_top = y - (is_boss ? 32.0f : 22.0f);
 
-        al_draw_filled_rectangle(
-            x - bar_w / 2, bar_top,
-            x - bar_w / 2 + bar_w * hp_ratio,
-            bar_top + 4,
-            is_boss
-            ? (phase2 ? al_map_rgb(220, 50, 220) : al_map_rgb(255, 150, 0))
-            : al_map_rgb(255, 0, 0));
+            al_draw_filled_rectangle(
+                x - bar_w / 2, bar_top,
+                x - bar_w / 2 + bar_w * hp_ratio,
+                bar_top + 4,
+                is_boss
+                ? (phase2 ? al_map_rgb(220, 50, 220) : al_map_rgb(255, 150, 0))
+                : al_map_rgb(255, 0, 0));
+        }
     }
 }
