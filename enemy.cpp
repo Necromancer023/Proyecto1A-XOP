@@ -325,7 +325,6 @@ void draw_enemies() {
 
             if (spr) {
                 if (stage_state.current_stage == 3) {
-                    // jefe 4 siempre centrado en pantalla ignorando x
                     al_draw_scaled_bitmap(spr,
                         0, 0,
                         al_get_bitmap_width(spr),
@@ -333,6 +332,13 @@ void draw_enemies() {
                         0, 0,
                         SCREEN_W, SCREEN_H,
                         0);
+
+                    // overlay negro con alpha inverso para el fade
+                    if (boss4_fade < 1.0f) {
+                        int alpha = (int)((1.0f - boss4_fade) * 255);
+                        al_draw_filled_rectangle(0, 0, SCREEN_W, SCREEN_H,
+                            al_map_rgba(0, 0, 0, alpha));
+                    }
                 }
                 else {
                     int w = al_get_bitmap_width(spr);
