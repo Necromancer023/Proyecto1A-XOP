@@ -151,6 +151,154 @@ void pattern_boss2_phase3(int idx) {
     }
 }
 
+// patron fase 3 jefe 3 — cruz giratoria en espiral
+void pattern_boss3_phase3(int idx) {
+    float speed = 3.5f * diff_bullet_speed();
+
+    // el angulo base rota con frame_count creando la espiral
+    float base_angle = enemy_pool[idx].frame_count * 0.03f;
+
+    // 4 balas en cruz separadas 90 grados
+    for (int d = 0; d < 4; d++) {
+        float angle = base_angle + (3.14159f / 2.0f) * d;
+        int b = alloc_bullet();
+        if (b == -1) return;
+
+        bullet_pool[b].x = enemy_pool[idx].x;
+        bullet_pool[b].y = enemy_pool[idx].y;
+        bullet_pool[b].angle = angle;
+        bullet_pool[b].speed = speed;
+        bullet_pool[b].owner = 1;
+        bullet_pool[b].bounces = 0;
+        bullet_pool[b].active = 1;
+    }
+}
+
+// ================================
+// PATRONES JEFE 4
+// ================================
+
+// fase 1 — circulo denso + triple apuntado
+void pattern_boss4_phase1(int idx) {
+    float speed = 3.5f * diff_bullet_speed();
+
+    // circulo de 24 balas
+    for (int j = 0; j < 24; j++) {
+        float angle = (2.0f * 3.14159f / 24) * j;
+        int b = alloc_bullet();
+        if (b == -1) return;
+        bullet_pool[b].x = enemy_pool[idx].x;
+        bullet_pool[b].y = enemy_pool[idx].y;
+        bullet_pool[b].angle = angle;
+        bullet_pool[b].speed = speed;
+        bullet_pool[b].owner = 1;
+        bullet_pool[b].bounces = 0;
+        bullet_pool[b].active = 1;
+    }
+
+    // triple apuntado al jugador
+    float base = atan2f(player.y - enemy_pool[idx].y,
+        player.x - enemy_pool[idx].x);
+    for (int j = -1; j <= 1; j++) {
+        int b = alloc_bullet();
+        if (b == -1) return;
+        bullet_pool[b].x = enemy_pool[idx].x;
+        bullet_pool[b].y = enemy_pool[idx].y;
+        bullet_pool[b].angle = base + j * 0.15f;
+        bullet_pool[b].speed = speed * 0.6f;
+        bullet_pool[b].owner = 1;
+        bullet_pool[b].bounces = 0;
+        bullet_pool[b].active = 1;
+    }
+}
+
+// fase 2 — espiral doble + lazers que rebotan
+void pattern_boss4_phase2(int idx) {
+    float speed = 4.0f * diff_bullet_speed();
+    float angle = enemy_pool[idx].frame_count * 0.12f;
+
+    // espiral doble
+    for (int j = 0; j < 2; j++) {
+        int b = alloc_bullet();
+        if (b == -1) return;
+        bullet_pool[b].x = enemy_pool[idx].x;
+        bullet_pool[b].y = enemy_pool[idx].y;
+        bullet_pool[b].angle = angle + 3.14159f * j;
+        bullet_pool[b].speed = speed;
+        bullet_pool[b].owner = 1;
+        bullet_pool[b].bounces = 0;
+        bullet_pool[b].active = 1;
+    }
+
+    // lazers diagonales que rebotan
+    float angles[] = { 0.785f, 2.356f, -0.785f, -2.356f };
+    for (int d = 0; d < 4; d++) {
+        for (int j = 0; j < 6; j++) {
+            float offset = j * 10.0f;
+            int b = alloc_bullet();
+            if (b == -1) return;
+            bullet_pool[b].x = enemy_pool[idx].x + cosf(angles[d]) * offset;
+            bullet_pool[b].y = enemy_pool[idx].y + sinf(angles[d]) * offset;
+            bullet_pool[b].angle = angles[d];
+            bullet_pool[b].speed = speed * 1.1f;
+            bullet_pool[b].owner = 1;
+            bullet_pool[b].bounces = 4;
+            bullet_pool[b].active = 1;
+        }
+    }
+}
+
+// fase 3 — cruz giratoria rapida + circulo + lazers
+void pattern_boss4_phase3(int idx) {
+    float speed = 4.5f * diff_bullet_speed();
+    float base_angle = enemy_pool[idx].frame_count * 0.05f;
+
+    // cruz giratoria de 8 balas
+    for (int d = 0; d < 8; d++) {
+        float angle = base_angle + (3.14159f / 4.0f) * d;
+        int b = alloc_bullet();
+        if (b == -1) return;
+        bullet_pool[b].x = enemy_pool[idx].x;
+        bullet_pool[b].y = enemy_pool[idx].y;
+        bullet_pool[b].angle = angle;
+        bullet_pool[b].speed = speed;
+        bullet_pool[b].owner = 1;
+        bullet_pool[b].bounces = 0;
+        bullet_pool[b].active = 1;
+    }
+
+    // circulo denso de 16 balas lentas
+    for (int j = 0; j < 16; j++) {
+        float angle = (2.0f * 3.14159f / 16) * j + base_angle * 0.5f;
+        int b = alloc_bullet();
+        if (b == -1) return;
+        bullet_pool[b].x = enemy_pool[idx].x;
+        bullet_pool[b].y = enemy_pool[idx].y;
+        bullet_pool[b].angle = angle;
+        bullet_pool[b].speed = speed * 0.6f;
+        bullet_pool[b].owner = 1;
+        bullet_pool[b].bounces = 0;
+        bullet_pool[b].active = 1;
+    }
+
+    // lazers que rebotan en las 4 diagonales
+    float angles[] = { 0.785f, 2.356f, -0.785f, -2.356f };
+    for (int d = 0; d < 4; d++) {
+        for (int j = 0; j < 4; j++) {
+            float offset = j * 14.0f;
+            int b = alloc_bullet();
+            if (b == -1) return;
+            bullet_pool[b].x = enemy_pool[idx].x + cosf(angles[d]) * offset;
+            bullet_pool[b].y = enemy_pool[idx].y + sinf(angles[d]) * offset;
+            bullet_pool[b].angle = angles[d];
+            bullet_pool[b].speed = speed * 1.2f;
+            bullet_pool[b].owner = 1;
+            bullet_pool[b].bounces = 5;
+            bullet_pool[b].active = 1;
+        }
+    }
+}
+
 // tabla normal
 FirePattern pattern_table[] = {
     pattern_aimed,
@@ -266,7 +414,6 @@ void update_enemies() {
         enemy_pool[i].y += sinf(enemy_pool[i].angle) * enemy_pool[i].speed;
         enemy_pool[i].frame_count++;
 
-
         enemy_pool[i].fire_timer--;
         if (enemy_pool[i].fire_timer <= 0) {
             int ptype = enemy_pool[i].type % NUM_PATTERNS;
@@ -274,6 +421,10 @@ void update_enemies() {
             if (stage_state.current_stage == 1 && enemy_pool[i].phase == 2) {
                 // fase 3 exclusiva del jefe 2
                 pattern_boss2_phase3(i);
+            }
+            else if (stage_state.current_stage == 2 && enemy_pool[i].phase == 2) {
+                // fase 3 exclusiva del jefe 3 — cruz giratoria
+                pattern_boss3_phase3(i);
             }
             else if (enemy_pool[i].phase == 1) {
                 // fase agresiva: usar tabla de fase 2
@@ -283,9 +434,53 @@ void update_enemies() {
                 pattern_table[ptype](i);
             }
 
+            if (stage_state.current_stage == 1 && enemy_pool[i].phase == 2) {
+                pattern_boss2_phase3(i);
+            }
+            else if (stage_state.current_stage == 2 && enemy_pool[i].phase == 2) {
+                pattern_boss3_phase3(i);
+            }
+            else if (stage_state.current_stage == 3 && enemy_pool[i].phase == 0) {
+                pattern_boss4_phase1(i);
+            }
+            else if (stage_state.current_stage == 3 && enemy_pool[i].phase == 1) {
+                pattern_boss4_phase2(i);
+            }
+            else if (stage_state.current_stage == 3 && enemy_pool[i].phase == 2) {
+                pattern_boss4_phase3(i);
+            }
+            else if (enemy_pool[i].phase == 1) {
+                pattern_table_phase2[ptype](i);
+            }
+            else {
+                pattern_table[ptype](i);
+            }
+
             int base = 60 + diff_fire_rate_bonus();
-            if (enemy_pool[i].phase == 2) base = (int)(base * 0.4f);  // fase 3 mas rapido
-            else if (enemy_pool[i].phase == 1) base = (int)(base * 0.6f);
+            bool es_jefe = (stage_state.boss_active && i == stage_state.boss_idx);
+
+            // enemigos normales del stage 4 disparan mas lento
+            if (stage_state.current_stage == 3 && !es_jefe) {
+                base = 60;  // disparan mas lento que normal
+            }
+            if (stage_state.current_stage == 2 && enemy_pool[i].phase == 2 && es_jefe) {
+                base = 3;
+            }
+            else if (stage_state.current_stage == 3 && enemy_pool[i].phase == 2 && es_jefe) {
+                base = 5;
+            }
+            else if (stage_state.current_stage == 3 && enemy_pool[i].phase == 1 && es_jefe) {
+                base = 10;
+            }
+            else if (stage_state.current_stage == 3 && enemy_pool[i].phase == 0 && es_jefe) {
+                base = 20;
+            }
+            else if (enemy_pool[i].phase == 2) {
+                base = (int)(base * 0.4f);
+            }
+            else if (enemy_pool[i].phase == 1) {
+                base = (int)(base * 0.6f);
+            }
             if (base < 12) base = 12;
             enemy_pool[i].fire_timer = base;
         }
