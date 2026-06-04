@@ -75,16 +75,16 @@ StageDescriptor stages[MAX_STAGES] = {
         "El Void",
         8,
         {
-            { 0, 10, 2.0f, 3, 20, 0 },
-            { 4, 8,  1.8f, 4, 30, 1 },
+            { 0, 8, 2.0f, 3, 20, 0 },
+            { 4, 6,  1.8f, 4, 30, 1 },
             { 3, 6,  1.5f, 5, 40, 3 },
-            { 2, 10, 1.7f, 3, 25, 0 },
-            { 1, 8,  1.6f, 4, 35, 2 },
+            { 2, 6, 1.7f, 3, 25, 0 },
+            { 1, 6,  1.6f, 4, 35, 2 },
             { 4, 6,  2.0f, 5, 30, 3 },
-            { 3, 10, 1.8f, 4, 35, 1 },
-            { 2, 12, 2.0f, 3, 20, 3 },
+            { 3, 6, 1.8f, 4, 35, 1 },
+            { 2, 6, 2.0f, 3, 20, 3 },
         },
-        1, 4, BOSS_HP_BASE + 40, 1.2f
+        1, 4, BOSS_HP_BASE + 120, 1.2f
     }
 };
 
@@ -312,30 +312,54 @@ void update_stage() {
                 boss->fire_timer = 15;
             }
 
-            // --- movimiento del jefe ---
-            if (stage_state.current_stage == 3) {
-                // jefe 4 fijo siempre en la esfera
-                boss->x = 240.0f;
-                boss->y = 320.0f;
+            // fase 3 exclusiva del jefe 3 — agregar esto
+            if (stage_state.current_stage == 2 &&
+                boss->phase == 1 && boss->hp <= boss_hp_max / 4) {
+                boss->phase = 2;
+                boss->fire_timer = 3;  // dispara muy rapido para la espiral
             }
-            else {
-                float stop_y = 80.0f;
-                if (stage_state.current_stage == 1) stop_y = 150.0f;
 
-                if (boss->y < stop_y) {
-                    boss->y += boss->speed;
+            // fases del jefe 4
+            if (stage_state.current_stage == 3) {
+                if (boss->phase == 0 && boss->hp <= boss_hp_max * 2 / 3) {
+                    boss->phase = 1;
+                    boss->fire_timer = 15;
+                }
+                if (boss->phase == 1 && boss->hp <= boss_hp_max / 3) {
+                    boss->phase = 2;
+                    boss->fire_timer = 8;
+                }
+            }
+
+            // --- movimiento del jefe ---
+                if (stage_state.current_stage == 3) {
+                    // jefe 4 fijo siempre en la esfera
+                    boss->x = 240.0f;
+                    boss->y = 320.0f;
+                }
+                else if (stage_state.current_stage == 2 && boss->phase == 2) {
+                    // jefe 3 fase 3 — fijo en el centro
+                    boss->x = SCREEN_W / 2.0f;
+                    boss->y = 150.0f;
                 }
                 else {
-                    float freq = (boss->phase >= 1) ? 0.035f : 0.02f;
-                    float amp = (boss->phase >= 1) ? 200.0f : 180.0f;
-                    boss->x = SCREEN_W / 2.0f + sinf(boss->frame_count * freq) * amp;
+                    float stop_y = 80.0f;
+                    if (stage_state.current_stage == 1) stop_y = 150.0f;
 
-                    if (boss->phase >= 1) {
-                        float base_y = (stage_state.current_stage == 1) ? 150.0f : 80.0f;
-                        boss->y = base_y + sinf(boss->frame_count * 0.018f) * 40.0f;
+                    if (boss->y < stop_y) {
+                        boss->y += boss->speed;
+                    }
+                    else {
+                        float freq = (boss->phase >= 1) ? 0.035f : 0.02f;
+                        float amp = (boss->phase >= 1) ? 200.0f : 180.0f;
+                        boss->x = SCREEN_W / 2.0f + sinf(boss->frame_count * freq) * amp;
+
+                        if (boss->phase >= 1) {
+                            float base_y = (stage_state.current_stage == 1) ? 150.0f : 80.0f;
+                            boss->y = base_y + sinf(boss->frame_count * 0.018f) * 40.0f;
+                        }
                     }
                 }
-            }
         }
         return;
     }
